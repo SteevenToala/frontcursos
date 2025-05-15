@@ -6,6 +6,8 @@ import {
 
 } from "firebase/auth";
 import StorageNavegador from "../StorageNavegador";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { storageBucket } from "./FirebaseConfig";
 
 class FirebaseService {
 
@@ -53,6 +55,18 @@ class FirebaseService {
         } catch (error) {
             console.error("Error de autenticación:", error);
             return true;
+        }
+    }
+
+    static async uploadFile(file: File, userName: string, fileName: string) {
+        const storageRef = ref(storageBucket, `uploads/${userName}/${fileName}`);
+        try {
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return downloadURL; // Devuelve la URL del archivo subido
+        } catch (error) {
+            console.error('Error al subir archivo:', error);
+            return null;
         }
     }
 
