@@ -1,8 +1,11 @@
 import {
     createUserWithEmailAndPassword,
+    EmailAuthProvider,
     getAuth,
+    reauthenticateWithCredential,
     sendEmailVerification,
     signInWithEmailAndPassword,
+    updatePassword,
 
 } from "firebase/auth";
 import StorageNavegador from "../StorageNavegador";
@@ -94,6 +97,44 @@ class FirebaseService {
         } catch (error) {
             console.error("Error al obtener la URL de la imagen:", error);
             return null;
+        }
+    }
+
+
+    /**
+     * Actualiza la contraseña del usuario autenticado.
+     * 
+     * Para poder actualizar la contraseña, Firebase requiere una reautenticación 
+     * reciente del usuario. Esto se hace usando las credenciales actuales del usuario 
+     * (correo y contraseña actual). Si la reautenticación es exitosa, se procede a 
+     * actualizar la contraseña con el nuevo valor.
+     * 
+     * @param newPassword - Nueva contraseña que el usuario desea establecer.
+     * @param currentPassword - Contraseña actual del usuario, necesaria para reautenticación.
+     * @returns true si la operación fue exitosa, o undefined si hubo un error.
+     */
+    static async updatePassword(newPassword: string, currentPassword: string) {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        // Validar que haya un usuario autenticado
+        if (!user) {
+            console.error("No hay usuario autenticado");
+            return;
+        }
+        const credential = EmailAuthProvider.credential(user.email!, currentPassword);
+
+        try {
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, newPassword);
+            return true;
+
+        } catch (error) {
+            // Manejar errores comunes
+            if ((error as { code: string }).code === 'auth/invalid-credential') {
+                return { success: false, error: 'Invalid credentials' };
+            } else {
+                console.error("Error al actualizar la contraseña:", error);
+            }
         }
     }
 
