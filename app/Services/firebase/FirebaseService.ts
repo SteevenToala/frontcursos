@@ -5,6 +5,7 @@ import {
     signInWithEmailAndPassword,
 
 } from "firebase/auth";
+import StorageNavegador from "../StorageNavegador";
 
 class FirebaseService {
 
@@ -16,9 +17,15 @@ class FirebaseService {
             const verifyE = await user.emailVerified;
             //agregar el obtener foto de usuario
             if (!verifyE) return alert("verifica tu correo Electronico")
-            /**
-             * Agregar Almacenamiento en el localStorage
-             */
+            StorageNavegador.saveToLocalStorageWithExpiry(
+                "user", {
+                email: email,
+                verify: verifyE,
+                uidFirebase: idToken,
+                username: userName,
+                urlUserImg: null
+            }, 60 * 60 * 1000
+            );
 
         } catch (error) {
             console.error("Error de autenticación:", error);
@@ -35,9 +42,14 @@ class FirebaseService {
             //agregar el obtener foto de usuario
             const verifyE = await user.emailVerified;
             if (!verifyE) return alert("verifica tu correo Electronico")
-            /**
-      * Agregar Almacenamiento en el localStorage
-      */
+            StorageNavegador.saveToLocalStorageWithExpiry(
+                "user", {
+                email: email,
+                verify: verifyE,
+                uidFirebase: idToken,
+                username: username,
+                urlUserImg: null
+            }, 60 * 60 * 1000);
         } catch (error) {
             console.error("Error de autenticación:", error);
             return true;
