@@ -4,6 +4,7 @@ import {
     getAuth,
     reauthenticateWithCredential,
     sendEmailVerification,
+    sendPasswordResetEmail,
     signInWithEmailAndPassword,
     updatePassword,
 
@@ -139,6 +140,18 @@ class FirebaseService {
     }
 
 
+    /**
+     * Envía un correo de restablecimiento de contraseña al usuario.
+     * 
+     * Esta función está pensada para ser utilizada en la vista de inicio de sesión,
+     * en casos donde el usuario haya olvidado su contraseña. Firebase se encarga de enviar
+     * un correo con un enlace para que el usuario pueda restablecerla de forma segura.
+     * 
+     * @param email Email del usuario a recuperar la cuenta
+     */
+    static async resetPassword(email: string) {
+        await sendPasswordResetEmail(getAuth(), email);
+    }
 }
 
 export default FirebaseService;
