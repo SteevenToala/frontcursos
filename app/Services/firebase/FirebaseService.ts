@@ -58,6 +58,15 @@ class FirebaseService {
         }
     }
 
+    /**
+      * Sube un archivo al storage de Firebase bajo la carpeta del usuario.
+      * Cada usuario tiene su propia carpeta dentro de /uploads/{username}/
+      * 
+      * @param file - Archivo a subir (por ejemplo: imagen, documento).
+      * @param userName - Nombre del usuario (carpeta donde se sube).
+      * @param fileName - Nombre del archivo (ej. 'user.png', 'documento.pdf').
+      * @returns URL pública del archivo subido, o null si hubo error.
+      */
     static async uploadFile(file: File, userName: string, fileName: string) {
         const storageRef = ref(storageBucket, `uploads/${userName}/${fileName}`);
         try {
@@ -69,6 +78,25 @@ class FirebaseService {
             return null;
         }
     }
+
+    /**
+    * Obtiene la URL de la imagen de perfil del usuario desde Firebase Storage.
+    * Se asume que la imagen se guarda como 'user.png' dentro de la carpeta del usuario.
+    * 
+    * @param userName - Nombre del usuario (usado como identificador de carpeta).
+    * @returns URL pública de la imagen, o null si no se pudo obtener.
+    */
+    private static async getImgUser(userName: string) {
+        const referencia = ref(storageBucket, `uploads/${userName}/user.png`);
+        try {
+            const url = await getDownloadURL(referencia);
+            return url;
+        } catch (error) {
+            console.error("Error al obtener la URL de la imagen:", error);
+            return null;
+        }
+    }
+
 
 }
 
