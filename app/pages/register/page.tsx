@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import type { z } from "zod"
+import { getAuth } from "firebase/auth"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,6 +18,9 @@ import { ImageUploadPro } from "@/components/image-upload-pro"
 import { SiteLayout } from "@/components/site-layout"
 import { registerSchema } from "@/lib/validations/auth"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { registerUsuario } from "../../Services/usuarioService"
+import FirebaseService from "@/app/Services/firebase/FirebaseService"
+
 import '@/app/globals.css'
 
 type RegisterFormValues = z.infer<typeof registerSchema>
@@ -37,9 +40,10 @@ export default function RegisterPage() {
       firstName: "",
       lastName: "",
       email: "",
+      telefono: "",
+      direccion: "",
       password: "",
       confirmPassword: "",
-      terms: true,
       profileImage: undefined,
     },
   })
@@ -52,18 +56,32 @@ export default function RegisterPage() {
     setIsPending(true)
 
     try {
-      // Simulación de registro
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Registrar usuario en Firebase y obtener el UID
+      const firebaseAuth = await FirebaseService.registerWithEmailAndPassword(values.email, values.password, values.firstName)
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const uidFirebase = user ? user.uid : undefined;
 
-      // Simulación de éxito
+      const response = await registerUsuario({
+        uid_firebase: uidFirebase, // Ahora usa el UID real de Firebase
+        nombres: values.firstName,
+        apellidos: values.lastName,
+        correo: values.email,
+        telefono: values.telefono,
+        direccion: values.direccion,
+        rol: "estudiante",
+        carrera: interestArea,
+        estado: "activo",
+        password: values.password,
+        url_foto: values.profileImage ? await toBase64(values.profileImage) : "https://example.com/foto.jpg",
+      })
+
       setSuccess("Tu cuenta ha sido creada correctamente")
-
-      // Redireccionar después de un breve retraso
       setTimeout(() => {
         router.push("/login")
       }, 1500)
-    } catch (error) {
-      setError("Ocurrió un error al crear tu cuenta. Por favor, inténtalo de nuevo.")
+    } catch (error: any) {
+      setError(error.message || "Error al registrar el usuario")
     } finally {
       setIsPending(false)
     }
@@ -71,6 +89,16 @@ export default function RegisterPage() {
 
   const handleImageChange = (file: File | null) => {
     form.setValue("profileImage", file || undefined)
+  }
+
+  // Helper function to convert File to base64 string
+  async function toBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
   }
 
   return (
@@ -116,6 +144,7 @@ export default function RegisterPage() {
                     <FormError message={form.formState.errors.lastName?.message} />
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Correo electrónico</Label>
                   <Input
@@ -128,6 +157,32 @@ export default function RegisterPage() {
                   />
                   <FormError message={form.formState.errors.email?.message} />
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Input
+                      id="telefono"
+                      placeholder="0999999999"
+                      className="auth-input"
+                      disabled={isPending}
+                      {...form.register("telefono")}
+                    />
+                    <FormError message={form.formState.errors.telefono?.message} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="direccion">Dirección</Label>
+                    <Input
+                      id="direccion"
+                      placeholder="Av. Siempre Viva 123"
+                      className="auth-input"
+                      disabled={isPending}
+                      {...form.register("direccion")}
+                    />
+                    <FormError message={form.formState.errors.direccion?.message} />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="interestArea">Área de interés</Label>
                   <Select value={interestArea} onValueChange={setInterestArea} disabled={isPending}>
@@ -135,15 +190,16 @@ export default function RegisterPage() {
                       <SelectValue placeholder="Selecciona un área" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="development">Desarrollo de software</SelectItem>
-                      <SelectItem value="design">Diseño UX/UI</SelectItem>
-                      <SelectItem value="marketing">Marketing digital</SelectItem>
-                      <SelectItem value="business">Negocios y emprendimiento</SelectItem>
-                      <SelectItem value="data">Ciencia de datos</SelectItem>
-                      <SelectItem value="other">Otro</SelectItem>
+                      <SelectItem value="Ingeniería en Sistemas">Desarrollo de software</SelectItem>
+                      <SelectItem value="Diseño Gráfico">Diseño UX/UI</SelectItem>
+                      <SelectItem value="Marketing">Marketing digital</SelectItem>
+                      <SelectItem value="Negocios">Negocios y emprendimiento</SelectItem>
+                      <SelectItem value="Ciencia de Datos">Ciencia de datos</SelectItem>
+                      <SelectItem value="General">Otro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="password">Contraseña</Label>
                   <div className="relative">
@@ -165,6 +221,7 @@ export default function RegisterPage() {
                   <FormError message={form.formState.errors.password?.message} />
                   <PasswordStrengthIndicator password={password} />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
                   <div className="relative">
@@ -185,24 +242,30 @@ export default function RegisterPage() {
                   </div>
                   <FormError message={form.formState.errors.confirmPassword?.message} />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="terms"
-                    className="border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                    disabled={isPending}
-                    {...form.register("terms")}
-                  />
-                  <Label htmlFor="terms" className="text-sm font-normal">
-                    Acepto los{" "}
-                    <Link href="/terms" className="text-primary hover:underline font-medium">
-                      términos y condiciones
-                    </Link>
-                  </Label>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="terms"
+                      type="checkbox"
+                      {...form.register("terms")}
+                      disabled={isPending}
+                      className="accent-primary"
+                    />
+                    <Label htmlFor="terms" className="text-sm font-normal">
+                      Acepto los{" "}
+                      <Link href="/terms" className="text-primary hover:underline font-medium" target="_blank">
+                        términos y condiciones
+                      </Link>
+                    </Label>
+                  </div>
+                  <FormError message={form.formState.errors.terms?.message} />
                 </div>
-                <FormError message={form.formState.errors.terms?.message} />
+
                 <FormError message={error} />
                 <FormSuccess message={success} />
               </CardContent>
+
               <CardFooter className="flex flex-col space-y-4">
                 <Button className="w-full auth-button" type="submit" disabled={isPending}>
                   {isPending ? (

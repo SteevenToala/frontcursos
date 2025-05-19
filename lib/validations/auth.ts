@@ -40,6 +40,14 @@ export const registerSchema = z
       errorMap: () => ({ message: "Debes aceptar los términos y condiciones" }),
     }),
     profileImage: z.any().optional(),
+    telefono: z
+      .string()
+      .min(7, { message: "El teléfono es obligatorio y debe tener al menos 7 dígitos" })
+      .max(20, { message: "El teléfono no puede exceder los 20 caracteres" }),
+    direccion: z
+      .string()
+      .min(1, { message: "La dirección es obligatoria" })
+      .max(100, { message: "La dirección no puede exceder los 100 caracteres" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
