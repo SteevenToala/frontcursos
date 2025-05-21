@@ -16,6 +16,7 @@ import { FormError, FormSuccess } from "@/components/ui-components"
 import { SiteLayout } from "@/components/site-layout"
 import { loginSchema } from "@/lib/validations/auth"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import FirebaseService from "@/app/Services/firebase/FirebaseService"
 import '../../globals.css'
 
 type LoginFormValues = z.infer<typeof loginSchema>
@@ -42,13 +43,14 @@ export default function LoginPage() {
     setIsPending(true)
 
     try {
-      // Simulación de inicio de sesión
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Simulación de éxito
+      // Autenticación real con FirebaseService
+      const result = await FirebaseService.loginWithEmailAndPasword(values.email, values.password, "");
+      if (result === true) {
+        setError("Credenciales incorrectas o error de autenticación. Por favor, inténtalo de nuevo.")
+        setIsPending(false)
+        return;
+      }
       setSuccess("Has iniciado sesión correctamente")
-
-      // Redireccionar después de un breve retraso
       setTimeout(() => {
         router.push("/dashboard")
       }, 1000)
