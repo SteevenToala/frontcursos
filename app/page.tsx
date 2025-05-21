@@ -3,7 +3,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { SiteLayout } from "@/components/site-layout"
 import { Calendar, BookOpen, Users, Award, Clock, MapPin } from "lucide-react"
-import "@/app/globals.css"
+import './globals.css'
+
 export default function Home() {
   return (
     <SiteLayout>
