@@ -3,7 +3,7 @@ import CreateSolicitude from "../models/Solicitud";
 
 class Solicitud {
     static async crearSolicitud(formData: CreateSolicitude) {
-        const response = await fetch("http://localhost:3001/solicitudes", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitudes`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
