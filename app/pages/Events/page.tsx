@@ -167,7 +167,7 @@ export default function EventsPage() {
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-primary">{event.price}</span>
                       <Button asChild className="auth-button">
-                        <Link href={/events/${event.id}}>Ver detalles</Link>
+                        <Link href={`/events/${event.id}`}>Ver detalles</Link>
                       </Button>
                     </div>
                   </div>
@@ -207,7 +207,7 @@ export default function EventsPage() {
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-primary">{event.price}</span>
                     <Button asChild className="auth-button">
-                      <Link href={/events/${event.id}}>Ver detalles</Link>
+                      <Link href={`/events/${event.id}`}>Ver detalles</Link>
                     </Button>
                   </div>
                 </div>
