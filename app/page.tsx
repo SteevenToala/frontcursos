@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { SiteLayout } from "@/components/site-layout"
 import { Calendar, BookOpen, Users, Award, Clock, MapPin } from "lucide-react"
+import { getContenidoHome } from './Services/Contenido-HomeService';
 import './globals.css'
 import { useEffect, useState } from "react"
 import * as contenidoHomeService from "./Services/contenidoHomeService"
@@ -79,13 +80,8 @@ export default function Home() {
               <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
                 Eventos y cursos de calidad
               </span>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-                Aprende y <span className="text-primary">conecta</span> con los mejores
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8 max-w-lg">
-                Descubre eventos y cursos diseñados para impulsar tu carrera profesional. Aprende nuevas habilidades y
-                conecta con expertos de la industria.
-              </p>
+              <h1>{contenido.heroTitulo || "Aprende y conecta con los mejores"}</h1>
+              <p>{contenido.heroDescripcion || "Descubre eventos y cursos diseñados para impulsar tu carrera profesional..."}</p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="auth-button">
                   <Link href="/events">Explorar eventos</Link>
