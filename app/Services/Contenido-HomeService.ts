@@ -1,3 +1,4 @@
+// services/Contenido-HomeService.ts
 const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/contenido-home`;
 
 export async function getContenidoHome() {
