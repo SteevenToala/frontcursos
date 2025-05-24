@@ -1,105 +1,60 @@
+"use client";
 import Link from "next/link"
 import Image from "next/image"
 import { SiteLayout } from "@/components/site-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar, MapPin, Users, Search, Filter } from "lucide-react"
+import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
+import '../../globals.css'
+import * as eventosService from "../../Services/eventosService";
 
 export default function EventsPage() {
-  // Datos de ejemplo para eventos
-  const events = [
-    {
-      id: 1,
-      title: "Conferencia de Desarrollo Web 2023",
-      description:
-        "Únete a los mejores desarrolladores web para aprender las últimas tendencias y tecnologías en desarrollo frontend y backend.",
-      date: "15 de Junio, 2023",
-      time: "10:00 - 18:00",
-      location: "Madrid, España",
-      venue: "Centro de Convenciones Madrid",
-      image: "/placeholder.svg?height=300&width=600",
-      price: "Desde 99€",
-      category: "Desarrollo",
-      attendees: 250,
-      featured: true,
-    },
-    {
-      id: 2,
-      title: "Workshop de UX/UI Design",
-      description:
-        "Un taller práctico donde aprenderás metodologías y herramientas para mejorar la experiencia de usuario en tus proyectos.",
-      date: "22 de Junio, 2023",
-      time: "09:30 - 17:00",
-      location: "Barcelona, España",
-      venue: "Design Hub Barcelona",
-      image: "/placeholder.svg?height=300&width=600",
-      price: "149€",
-      category: "Diseño",
-      attendees: 50,
-      featured: true,
-    },
-    {
-      id: 3,
-      title: "Masterclass de Marketing Digital",
-      description:
-        "Aprende estrategias avanzadas de marketing digital con expertos del sector. SEO, SEM, redes sociales y más.",
-      date: "30 de Junio, 2023",
-      time: "16:00 - 20:00",
-      location: "Valencia, España",
-      venue: "Hotel Sorolla Palace",
-      image: "/placeholder.svg?height=300&width=600",
-      price: "79€",
-      category: "Marketing",
-      attendees: 100,
-      featured: false,
-    },
-    {
-      id: 4,
-      title: "Hackathon: Inteligencia Artificial",
-      description:
-        "48 horas para desarrollar soluciones innovadoras utilizando inteligencia artificial. Premios para los mejores proyectos.",
-      date: "8-10 de Julio, 2023",
-      time: "Comienza a las 18:00",
-      location: "Sevilla, España",
-      venue: "Campus Tecnológico",
-      image: "/placeholder.svg?height=300&width=600",
-      price: "Gratuito",
-      category: "Desarrollo",
-      attendees: 150,
-      featured: false,
-    },
-    {
-      id: 5,
-      title: "Conferencia de Emprendimiento",
-      description:
-        "Descubre las claves para lanzar tu startup y hacerla crecer. Networking con inversores y emprendedores de éxito.",
-      date: "15 de Julio, 2023",
-      time: "09:00 - 19:00",
-      location: "Málaga, España",
-      venue: "Palacio de Ferias",
-      image: "/placeholder.svg?height=300&width=600",
-      price: "129€",
-      category: "Negocios",
-      attendees: 300,
-      featured: true,
-    },
-    {
-      id: 6,
-      title: "Workshop de Data Science",
-      description:
-        "Taller práctico sobre análisis de datos, machine learning y visualización. Trae tu portátil para practicar.",
-      date: "22 de Julio, 2023",
-      time: "10:00 - 18:00",
-      location: "Bilbao, España",
-      venue: "Universidad de Deusto",
-      image: "/placeholder.svg?height=300&width=600",
-      price: "199€",
-      category: "Data",
-      attendees: 40,
-      featured: false,
-    },
-  ]
+
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Datos de para eventos
+  useEffect(() => {
+    async function fetchEventos() {
+      try {
+        const data = await eventosService.getEventos();
+        setEvents(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEventos();
+  }, []);
+
+
+    // Loader mientras carga
+  if (loading) {
+    return (
+      <SiteLayout>
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <span className="text-lg text-muted-foreground">Cargando eventos...</span>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  // Si no hay eventos, mensaje amigable
+  if (!events.length) {
+    return (
+      <SiteLayout>
+        <section className="container mx-auto py-16 text-center">
+          <h1 className="text-4xl font-bold mb-4">Eventos</h1>
+          <p className="mb-8 text-muted-foreground">
+            No hay eventos disponibles en este momento. ¡Vuelve pronto!
+          </p>
+        </section>
+      </SiteLayout>
+    );
+  }
 
   return (
     <SiteLayout>
@@ -136,38 +91,41 @@ export default function EventsPage() {
               .slice(0, 2)
               .map((event) => (
                 <div
-                  key={event.id}
+                  key={event.id_evento}
                   className="flex flex-col md:flex-row bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div className="md:w-2/5 relative h-60 md:h-auto">
-                    <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
-                    <Badge className="absolute top-4 left-4 bg-primary">{event.category}</Badge>
+                    <Image
+                      src={event.url_foto || "/placeholder.svg"}
+                      alt={event.nombre}
+                      fill
+                      className="object-cover"
+                    />
+                    <Badge className="absolute top-4 left-4 bg-primary">{event.categoria}</Badge>
                   </div>
                   <div className="md:w-3/5 p-6">
-                    <h3 className="font-bold text-xl mb-2">{event.title}</h3>
-                    <p className="text-muted-foreground mb-4 line-clamp-2">{event.description}</p>
+                    <h3 className="font-bold text-xl mb-2">{event.nombre}</h3>
+                    <p className="text-muted-foreground mb-4 line-clamp-2">{event.descripcion}</p>
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
                         <span className="text-sm">
-                          {event.date} • {event.time}
+                          {event.fecha_inicio} - {event.fecha_fin}
                         </span>
                       </div>
                       <div className="flex items-center text-muted-foreground">
                         <MapPin className="h-4 w-4 mr-2" />
-                        <span className="text-sm">
-                          {event.venue}, {event.location}
-                        </span>
+                        <span className="text-sm">{event.modalidad}</span>
                       </div>
                       <div className="flex items-center text-muted-foreground">
                         <Users className="h-4 w-4 mr-2" />
-                        <span className="text-sm">{event.attendees} asistentes</span>
+                        <span className="text-sm">{event.id_organizador ? "Organizador #" + event.id_organizador : ""}</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-primary">{event.price}</span>
+                      <span className="font-bold text-primary">{event.costo ? `$${event.costo}` : "Gratis"}</span>
                       <Button asChild className="auth-button">
-                        <Link href={`/events/${event.id}`}>Ver detalles</Link>
+                        <Link href={`/events/${event.id_evento}`}>Ver detalles</Link>
                       </Button>
                     </div>
                   </div>
@@ -184,30 +142,37 @@ export default function EventsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {events.map((event) => (
               <div
-                key={event.id}
+                key={event.id_evento}
                 className="bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div className="relative h-48">
-                  <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
-                  <Badge className="absolute top-4 left-4 bg-primary">{event.category}</Badge>
+                  <Image
+                    src={event.url_foto || "/placeholder.svg"}
+                    alt={event.nombre}
+                    fill
+                    className="object-cover"
+                  />
+                  <Badge className="absolute top-4 left-4 bg-primary">{event.categoria}</Badge>
                 </div>
                 <div className="p-6">
-                  <h3 className="font-bold text-lg mb-2 line-clamp-1">{event.title}</h3>
-                  <p className="text-muted-foreground mb-4 text-sm line-clamp-2">{event.description}</p>
+                  <h3 className="font-bold text-lg mb-2 line-clamp-1">{event.nombre}</h3>
+                  <p className="text-muted-foreground mb-4 text-sm line-clamp-2">{event.descripcion}</p>
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-2" />
-                      <span className="text-sm">{event.date}</span>
+                      <span className="text-sm">
+                        {event.fecha_inicio} - {event.fecha_fin}
+                      </span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
                       <MapPin className="h-4 w-4 mr-2" />
-                      <span className="text-sm">{event.location}</span>
+                      <span className="text-sm">{event.modalidad}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-primary">{event.price}</span>
+                    <span className="font-bold text-primary">{event.costo ? `$${event.costo}` : "Gratis"}</span>
                     <Button asChild className="auth-button">
-                      <Link href={`/events/${event.id}`}>Ver detalles</Link>
+                      <Link href={`/events/${event.id_evento}`}>Ver detalles</Link>
                     </Button>
                   </div>
                 </div>
