@@ -14,12 +14,24 @@ export default function EventsPage() {
 
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([]);
+  const [modalidad, setModalidad] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  const [costoDesde, setCostoDesde] = useState("");
+  const [costoHasta, setCostoHasta] = useState("");
+  const [soloGratuitos, setSoloGratuitos] = useState(false);
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
+  
 
   // Datos de para eventos
   useEffect(() => {
     async function fetchEventos() {
       try {
         const data = await eventosService.getEventos();
+        console.log("Eventos recibidos:", data);
         setEvents(Array.isArray(data) ? data : []);
       } catch (error) {
         setEvents([]);
@@ -30,6 +42,28 @@ export default function EventsPage() {
     fetchEventos();
   }, []);
 
+  const filteredEvents = events.filter(event =>
+    event.nombre.toLowerCase().includes(search.toLowerCase()) ||
+    event.categoria.toLowerCase().includes(search.toLowerCase()) ||
+    (event.descripcion && event.descripcion.toLowerCase().includes(search.toLowerCase()))
+  )
+  .filter(event =>
+    categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(event.categoria)
+  )
+  .filter(event =>
+    !modalidad || event.modalidad === modalidad
+  )
+  .filter(event => {
+    if (fechaDesde && new Date(event.fecha_inicio) < new Date(fechaDesde)) return false;
+    if (fechaHasta && new Date(event.fecha_fin) > new Date(fechaHasta)) return false;
+    return true;
+  })
+  .filter(event => {
+    if (soloGratuitos) return event.costo === 0;
+    if (costoDesde && event.costo < Number(costoDesde)) return false;
+    if (costoHasta && event.costo > Number(costoHasta)) return false;
+    return true;
+  });
 
     // Loader mientras carga
   if (loading) {
@@ -67,15 +101,229 @@ export default function EventsPage() {
               Descubre conferencias, workshops y meetups diseñados para impulsar tu carrera profesional y conectar con
               expertos de la industria.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex justify-end items-start gap-2 relative">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="search" placeholder="Buscar eventos..." className="pl-10 auth-input" />
+                <Input type="search" placeholder="Buscar eventos..."  className="pl-10 auth-input" value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
-              <Button variant="outline" className="border-primary/30 text-primary">
+              <Button variant="outline" className="border-primary/30 text-primary" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
               </Button>
+                {showFilters && (
+                <div className="bg-white border rounded-lg shadow-md p-4 my-4 flex flex-col gap-2 max-w-md mx-auto">
+
+                  {/* Categoría */}
+                  <div>
+                    <button
+                      className="w-full flex justify-between items-center font-semibold py-2"
+                      onClick={() => setOpenFilter(openFilter === "categoria" ? null : "categoria")}
+                    >
+                      <span>Categoría</span>
+                      <span>{openFilter === "categoria" ? "▲" : "▼"}</span>
+                    </button>
+                    {openFilter === "categoria" && (
+                      <div className="pl-4 flex flex-col gap-1 mb-2">
+                        {["Arte", "Software", "Ciencias", "Educación"].map((cat) => (
+                          <label key={cat} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={categoriasSeleccionadas.includes(cat)}
+                              onChange={() =>
+                                setCategoriasSeleccionadas((prev) =>
+                                  prev.includes(cat)
+                                    ? prev.filter((c) => c !== cat)
+                                    : [...prev, cat]
+                                )
+                              }
+                            />
+                            <span>{cat}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Modalidad */}
+                  <div>
+                    <button
+                      className="w-full flex justify-between items-center font-semibold py-2"
+                      onClick={() => setOpenFilter(openFilter === "modalidad" ? null : "modalidad")}
+                    >
+                      <span>Modalidad</span>
+                      <span>{openFilter === "modalidad" ? "▲" : "▼"}</span>
+                    </button>
+                    {openFilter === "modalidad" && (
+                      <div className="pl-4 flex flex-col gap-1 mb-2">
+                        {["Presencial", "Virtual", "Híbrido"].map((mod) => (
+                          <label key={mod} className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="modalidad"
+                              checked={modalidad === mod}
+                              onChange={() => setModalidad(mod)}
+                            />
+                            <span>{mod}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Fechas */}
+                  <div>
+                    <button
+                      className="w-full flex justify-between items-center font-semibold py-2"
+                      onClick={() => setOpenFilter(openFilter === "fechas" ? null : "fechas")}
+                    >
+                      <span>Fechas</span>
+                      <span>{openFilter === "fechas" ? "▲" : "▼"}</span>
+                    </button>
+                    {openFilter === "fechas" && (
+                      <div className="pl-4 flex flex-col gap-1 mb-2">
+                        <div className="flex gap-2 items-center">
+                          <span>📅 Desde:</span>
+                          <input
+                            type="date"
+                            value={fechaDesde}
+                            onChange={(e) => setFechaDesde(e.target.value)}
+                            className="border rounded p-1"
+                          />
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <span>📅 Hasta:</span>
+                          <input
+                            type="date"
+                            value={fechaHasta}
+                            onChange={(e) => setFechaHasta(e.target.value)}
+                            className="border rounded p-1"
+                          />
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            type="button"
+                            className="text-xs underline"
+                            onClick={() => {
+                              const now = new Date();
+                              const nextWeek = new Date(now);
+                              nextWeek.setDate(now.getDate() + 7);
+                              setFechaDesde(now.toISOString().slice(0, 10));
+                              setFechaHasta(nextWeek.toISOString().slice(0, 10));
+                            }}
+                          >
+                            Esta semana
+                          </button>
+                          <button
+                            type="button"
+                            className="text-xs underline"
+                            onClick={() => {
+                              const now = new Date();
+                              const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+                              setFechaDesde(now.toISOString().slice(0, 10));
+                              setFechaHasta(nextMonth.toISOString().slice(0, 10));
+                            }}
+                          >
+                            Este mes
+                          </button>
+                          <button
+                            type="button"
+                            className="text-xs underline"
+                            onClick={() => {
+                              const now = new Date();
+                              const next3Months = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+                              setFechaDesde(now.toISOString().slice(0, 10));
+                              setFechaHasta(next3Months.toISOString().slice(0, 10));
+                            }}
+                          >
+                            Próximos 3 meses
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Costo */}
+                  <div>
+                    <button
+                      className="w-full flex justify-between items-center font-semibold py-2"
+                      onClick={() => setOpenFilter(openFilter === "costo" ? null : "costo")}
+                    >
+                      <span>Costo</span>
+                      <span>{openFilter === "costo" ? "▲" : "▼"}</span>
+                    </button>
+                    {openFilter === "costo" && (
+                      <div className="pl-4 flex flex-col gap-1 mb-2">
+                        <div className="flex gap-2 items-center">
+                          <span>💰 Desde:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={costoDesde}
+                            onChange={(e) => setCostoDesde(e.target.value)}
+                            className="border rounded p-1 w-20"
+                          />
+                          <span>💰 Hasta:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={costoHasta}
+                            onChange={(e) => setCostoHasta(e.target.value)}
+                            className="border rounded p-1 w-20"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <input
+                            type="checkbox"
+                            checked={soloGratuitos}
+                            onChange={() => setSoloGratuitos((v) => !v)}
+                          />
+                          <span>Solo gratuitos</span>
+                        </div>
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {[
+                            [0, 50],
+                            [50, 100],
+                            [100, 500],
+                            [500, 100000],
+                          ].map(([min, max]) => (
+                            <button
+                              key={min}
+                              type="button"
+                              className="text-xs underline"
+                              onClick={() => {
+                                setCostoDesde(min.toString());
+                                setCostoHasta(max === 100000 ? "" : max.toString());
+                                setSoloGratuitos(min === 0 && max === 50);
+                              }}
+                            >
+                              {max === 100000 ? "$500+" : `$${min} - $${max}`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botones */}
+                  <div className="flex gap-2 mt-4 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCategoriasSeleccionadas([]);
+                        setModalidad("");
+                        setFechaDesde("");
+                        setFechaHasta("");
+                        setCostoDesde("");
+                        setCostoHasta("");
+                        setSoloGratuitos(false);
+                      }}
+                    >
+                      Limpiar
+                    </Button>
+                    <Button onClick={() => setShowFilters(false)}>Aplicar</Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -96,7 +344,7 @@ export default function EventsPage() {
                 >
                   <div className="md:w-2/5 relative h-60 md:h-auto">
                     <Image
-                      src={event.url_foto || "/placeholder.svg"}
+                      src={event.urlfoto || "/placeholder.svg"}
                       alt={event.nombre}
                       fill
                       className="object-cover"
@@ -110,7 +358,7 @@ export default function EventsPage() {
                       <div className="flex items-center text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
                         <span className="text-sm">
-                          {event.fecha_inicio} - {event.fecha_fin}
+                          {event.fechaInicio} - {event.fechaFin}
                         </span>
                       </div>
                       <div className="flex items-center text-muted-foreground">
@@ -125,7 +373,7 @@ export default function EventsPage() {
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-primary">{event.costo ? `$${event.costo}` : "Gratis"}</span>
                       <Button asChild className="auth-button">
-                        <Link href={`/events/${event.id_evento}`}>Ver detalles</Link>
+                        <Link href={`/Events/${event.id_evento}`}>Ver detalles</Link>
                       </Button>
                     </div>
                   </div>
@@ -147,7 +395,7 @@ export default function EventsPage() {
               >
                 <div className="relative h-48">
                   <Image
-                    src={event.url_foto || "/placeholder.svg"}
+                    src={event.urlfoto || "/placeholder.svg"}
                     alt={event.nombre}
                     fill
                     className="object-cover"
@@ -161,7 +409,7 @@ export default function EventsPage() {
                     <div className="flex items-center text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span className="text-sm">
-                        {event.fecha_inicio} - {event.fecha_fin}
+                        {event.fechaInicio} - {event.fechaFin}
                       </span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
