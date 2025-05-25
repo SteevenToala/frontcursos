@@ -10,6 +10,26 @@ import { Badge } from "@/components/ui/badge"
 import '../../globals.css'
 import * as eventosService from "../../Services/eventosService";
 
+function formatFecha(fechaStr: string) {
+  if (!fechaStr) return "";
+  const fecha = new Date(fechaStr);
+  return fecha.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatHora(fechaStr: string) {
+  if (!fechaStr) return "";
+  const fecha = new Date(fechaStr);
+  return fecha.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 export default function EventsPage() {
 
   const [events, setEvents] = useState<any[]>([]);
@@ -357,9 +377,12 @@ export default function EventsPage() {
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
-                        <span className="text-sm">
-                          {event.fechaInicio} - {event.fechaFin}
-                        </span>
+                          <div>
+                            <p className="font-medium">{formatFecha(event.fechaInicio)}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatHora(event.fechaInicio)} - {formatHora(event.fechaFin)}
+                            </p>
+                          </div>
                       </div>
                       <div className="flex items-center text-muted-foreground">
                         <MapPin className="h-4 w-4 mr-2" />
@@ -408,9 +431,21 @@ export default function EventsPage() {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-2" />
-                      <span className="text-sm">
-                        {event.fechaInicio} - {event.fechaFin}
-                      </span>
+                      <div>
+                        <p className="font-medium">
+                          {event.fechaInicio
+                            ? new Date(event.fechaInicio).toLocaleDateString() +
+                              " " +
+                              new Date(event.fechaInicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : "Sin fecha"}
+                          {event.fechaFin
+                            ? " - " +
+                              new Date(event.fechaFin).toLocaleDateString() +
+                              " " +
+                              new Date(event.fechaFin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            : ""}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex items-center text-muted-foreground">
                       <MapPin className="h-4 w-4 mr-2" />
