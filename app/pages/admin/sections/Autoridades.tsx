@@ -78,7 +78,6 @@ export default function Autoridade() {
         }
     };
 
-
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="flex justify-between items-center mb-6">
