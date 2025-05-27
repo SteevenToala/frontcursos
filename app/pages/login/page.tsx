@@ -27,9 +27,9 @@ export default function LoginPage() {
     const user = StorageNavegador.getItemWithExpiry("user");
     if (user) {
       if (user && typeof user === "object" && "rol" in user && (user as any).rol !== "admin") {
-        router.push("/pages/dashboard")
+        router.push("/pages/client/dashboard")
       } else {
-        router.push("/pages/admin")
+        router.push("/pages/admin/dashboard")
       }
     }
   })
