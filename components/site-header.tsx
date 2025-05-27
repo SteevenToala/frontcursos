@@ -19,10 +19,10 @@ export function SiteHeader() {
         <MainNav />
         <div className="hidden md:flex items-center space-x-4">
           <Button asChild variant="ghost" className="text-muted-foreground hover:text-primary">
-            <Link href="/login">Acceder</Link>
+            <Link href="/pages/login">Iniciar Sesion</Link>
           </Button>
           <Button asChild className="auth-button">
-            <Link href="/register">Inscribirse</Link>
+            <Link href="/pages/register">Registrarse</Link>
           </Button>
         </div>
       </div>

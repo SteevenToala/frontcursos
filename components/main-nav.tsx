@@ -9,9 +9,9 @@ import { Menu, X } from "lucide-react"
 
 const navItems = [
   { name: "Inicio", href: "/" },
-  { name: "Eventos", href: "/events" },
-  { name: "Cursos", href: "/courses" },
-  { name: "Contacto", href: "/contact" },  
+  { name: "Eventos", href: "/pages/events" },
+  { name: "Cursos", href: "/pages/courses" },
+  { name: "Contacto", href: "/pages/contact" },  
 ]
 
 export function MainNav() {
@@ -70,10 +70,10 @@ export function MainNav() {
             <div className="pt-2 pb-1 border-t border-gray-200 mt-2">
               <div className="flex space-x-2 pt-2">
                 <Button asChild size="sm" className="w-full auth-button">
-                  <Link href="/login">Acceder</Link>
+                  <Link href="/pages/login">Iniciar Sesion</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm" className="w-full border-primary/30 text-primary">
-                  <Link href="/register">Inscribirse</Link>
+                  <Link href="/pages/register">Registrarse</Link>
                 </Button>
               </div>
             </div>
