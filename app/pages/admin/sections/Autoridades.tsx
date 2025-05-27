@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// Imports y configuración inicial
+>>>>>>> b03e76c (implementacion de  gestión de autoridades con operaciones CRUD)
 "use client";
 import '@/app/globals.css';
 import { Autoridad } from '@/app/models/Autoridad';
