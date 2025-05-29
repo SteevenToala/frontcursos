@@ -1,22 +1,21 @@
-import React, { JSX } from "react";
-import { FaPaintBrush, FaCode, FaFlask, FaBook } from "react-icons/fa";
+import React from "react";
+import RangeSlider from 'react-range-slider-input';
+import 'react-range-slider-input/dist/style.css';
 
-type FilterType = "categoria" | "modalidad" | "precio";
-type Categoria = "Arte" | "Software" | "Ciencias" | "Educación";
-type Modalidad = "Presencial" | "Virtual" | "Híbrido";
+type FilterType = "Categoria" | "Modalidad" | "Precio";
 
 interface Filter {
   key: FilterType;
   label: string;
   options: any[];
-  type: "checkbox" | "radio" | "price";
+  type: "checkbox" | "radio" | "price" | "range";
 }
 
 interface Props {
   openFilter: string | null;
   setOpenFilter: (key: string | null) => void;
-  categoriasSeleccionadas: Categoria[];
-  setCategoriasSeleccionadas: (cats: Categoria[]) => void;
+  categoriasSeleccionadas: string[];
+  setCategoriasSeleccionadas: (cats: string[]) => void; 
   modalidad: string;
   setModalidad: (m: string) => void;
   precioSeleccionado: { min: number; max: number | null };
@@ -25,16 +24,8 @@ interface Props {
   setPrecioMin: (v: string) => void;
   precioMax: string;
   setPrecioMax: (v: string) => void;
-  showFilters: boolean;
   filters: Filter[];
 }
-
-const categoryIcons: Record<Categoria, JSX.Element> = {
-  Arte: <FaPaintBrush className="text-xl text-red-500" />,
-  Software: <FaCode className="text-xl text-blue-500" />,
-  Ciencias: <FaFlask className="text-xl text-green-500" />,
-  Educación: <FaBook className="text-xl text-yellow-500" />,
-};
 
 export const EventFilters: React.FC<Props> = ({
   openFilter,
@@ -49,14 +40,14 @@ export const EventFilters: React.FC<Props> = ({
   setPrecioMin,
   precioMax,
   setPrecioMax,
-  showFilters,
   filters,
 }) => {
-  if (!showFilters) return null;
+  const precioMaxRange = 1000;
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-3">
-      {filters.map((filter) => (
+    <div className="w-full space-y-3 bg-white p-4 rounded-lg shadow-sm border">
+    <h3 className="text-lg font-semibold mb-4">Filtros</h3>
+    {filters.map((filter) => (
         <div key={filter.key} className="rounded-lg shadow border border-border">
           <button
             className={`
@@ -80,24 +71,19 @@ export const EventFilters: React.FC<Props> = ({
             `}
           >
             {openFilter === filter.key && (
-              filter.key === "categoria" ? (
+              filter.type === "checkbox" ? (
+                // ✅ Cambio: usar filter.type en lugar de filter.key
                 <div className="divide-y divide-gray-200">
-                  {filter.options.map((option: Categoria) => {
+                  {filter.options.map((option: string) => {
                     const selected = categoriasSeleccionadas.includes(option);
                     return (
                       <label
                         key={option}
                         className={`
-                          flex items-center justify-between gap-4 py-3 px-2 cursor-pointer transition
+                          flex items-center gap-3 py-3 px-2 cursor-pointer transition
                           ${selected ? "bg-red-50" : "bg-white hover:bg-gray-50"}
                         `}
                       >
-                        <div className="flex items-center gap-3">
-                          {categoryIcons[option] !== undefined
-                            ? categoryIcons[option]
-                            : <span className="w-6" />}
-                          <span className="text-base text-gray-800">{option}</span>
-                        </div>
                         <input
                           type="checkbox"
                           name={filter.key}
@@ -110,15 +96,17 @@ export const EventFilters: React.FC<Props> = ({
                                 : [...categoriasSeleccionadas, option]
                             );
                           }}
-                          className="form-checkbox h-5 w-5 rounded-full border-gray-300 text-red-600 focus:ring-red-500 transition"
+                          className="form-checkbox h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500 transition"
                         />
+                        <span className="text-base text-gray-800">{option}</span>
                       </label>
                     );
                   })}
                 </div>
-              ) : filter.key === "modalidad" ? (
+              ) : filter.type === "radio" ? (
+                // ✅ Cambio: usar filter.type en lugar de filter.key
                 <div className="flex flex-col gap-3 mt-2">
-                  {filter.options.map((option: Modalidad) => (
+                  {filter.options.map((option: string) => ( // ✅ Cambio: string en lugar de Modalidad
                     <label key={option} className="flex items-center gap-3 cursor-pointer select-none">
                       <input
                         type="radio"
@@ -132,7 +120,118 @@ export const EventFilters: React.FC<Props> = ({
                     </label>
                   ))}
                 </div>
-              ) : filter.key === "precio" ? (
+              ) : filter.type === "range" ? (
+                <div className="flex flex-col gap-4 p-4">
+                  {/* Mostrar valores actuales */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Rango de precio</span>
+                    <span className="text-sm text-gray-600">
+                      ${precioSeleccionado.min} - ${precioSeleccionado.max || precioMaxRange}
+                    </span>
+                  </div>
+              
+                  {/* ✅ Range Slider que funciona correctamente */}
+                  <div className="px-2">
+                    <RangeSlider
+                      min={0}
+                      max={precioMaxRange}
+                      step={10}
+                      value={[precioSeleccionado.min, precioSeleccionado.max || precioMaxRange]}
+                      onInput={(values) => {
+                        setPrecioSeleccionado({
+                          min: values[0],
+                          max: values[1]
+                        });
+                        setPrecioMin(values[0].toString());
+                        setPrecioMax(values[1].toString());
+                      }}
+                      className="range-slider-red"
+                    />
+                  </div>
+              
+                  {/* ✅ Inputs personalizados con validación */}
+                  <div className="space-y-3">
+                    <span className="text-xs font-medium text-gray-600">Personalizado:</span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-500 mb-1">Mínimo</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
+                          <input
+                            type="number"
+                            placeholder="0"
+                            min="0"
+                            max={precioSeleccionado.max || precioMaxRange}
+                            className="w-full pl-6 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            value={precioMin}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const numValue = Number(value);
+                              
+                              if (value === '' || (numValue >= 0 && numValue <= (precioSeleccionado.max || precioMaxRange))) {
+                                setPrecioMin(value);
+                                if (value !== '') {
+                                  setPrecioSeleccionado({
+                                    min: numValue,
+                                    max: precioSeleccionado.max
+                                  });
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-center pt-6">
+                        <span className="text-gray-400">-</span>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <label className="block text-xs text-gray-500 mb-1">Máximo</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
+                          <input
+                            type="number"
+                            placeholder={precioMaxRange.toString()}
+                            min={precioSeleccionado.min}
+                            max={precioMaxRange}
+                            className="w-full pl-6 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            value={precioMax}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const numValue = Number(value);
+                              
+                              if (value === '' || (numValue >= precioSeleccionado.min && numValue <= precioMaxRange)) {
+                                setPrecioMax(value);
+                                if (value !== '') {
+                                  setPrecioSeleccionado({
+                                    min: precioSeleccionado.min,
+                                    max: numValue
+                                  });
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              
+                  {/* Botón reset */}
+                  <button
+                    className="self-start text-xs text-red-600 hover:text-red-800 underline transition-colors"
+                    onClick={() => {
+                      setPrecioMin("");
+                      setPrecioMax("");
+                      setPrecioSeleccionado({ min: 0, max: null });
+                    }}
+                    type="button"
+                  >
+                    Limpiar filtros de precio
+                  </button>
+                </div>
+              ) : filter.type === "price" ? (
+                // ✅ Cambio: usar filter.type en lugar de filter.key
                 <div className="flex flex-col gap-2">
                   {filter.options.map((option: any) => (
                     <label key={option.label} className="flex items-center gap-2 cursor-pointer">
