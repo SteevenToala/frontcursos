@@ -2,13 +2,13 @@ import React from "react";
 import RangeSlider from 'react-range-slider-input';
 import 'react-range-slider-input/dist/style.css';
 
-type FilterType = "Categoria" | "Modalidad" | "Precio";
+type FilterType = "Categoria" | "Modalidad" | "Precio" | "Fecha" | "TipoEvento";
 
 interface Filter {
   key: FilterType;
   label: string;
   options: any[];
-  type: "checkbox" | "radio" | "price" | "range";
+  type: "checkbox" | "radio" | "price" | "range" | "date";
 }
 
 interface Props {
@@ -24,6 +24,12 @@ interface Props {
   setPrecioMin: (v: string) => void;
   precioMax: string;
   setPrecioMax: (v: string) => void;
+  fechaInicio: string;
+  setFechaInicio: (v: string) => void;
+  fechaFin: string;
+  setFechaFin: (v: string) => void;
+  tiposEventoSeleccionados: string[];
+  setTiposEventoSeleccionados: (v: string[]) => void;
   filters: Filter[];
 }
 
@@ -40,6 +46,12 @@ export const EventFilters: React.FC<Props> = ({
   setPrecioMin,
   precioMax,
   setPrecioMax,
+  fechaInicio,
+  setFechaInicio,
+  fechaFin,
+  setFechaFin,
+  tiposEventoSeleccionados,
+  setTiposEventoSeleccionados,
   filters,
 }) => {
   const precioMaxRange = 1000;
@@ -75,7 +87,34 @@ export const EventFilters: React.FC<Props> = ({
                 // ✅ Cambio: usar filter.type en lugar de filter.key
                 <div className="divide-y divide-gray-200">
                   {filter.options.map((option: string) => {
-                    const selected = categoriasSeleccionadas.includes(option);
+
+                  // Diferenciar entre categorías y tipos de evento
+                  let selected = false;
+                  let onChangeHandler = () => {};
+
+                    if (filter.key === "Categoria") {
+                      selected = categoriasSeleccionadas.includes(option);
+                      onChangeHandler = () => {
+                        setCategoriasSeleccionadas(
+                          selected
+                            ? categoriasSeleccionadas.filter((c) => c !== option)
+                            : [...categoriasSeleccionadas, option]
+                        );
+                      };
+                    } else if (filter.key === "TipoEvento") {
+                      selected = tiposEventoSeleccionados.includes(option);
+                      onChangeHandler = () => {
+                        setTiposEventoSeleccionados(
+                          selected
+                            ? tiposEventoSeleccionados.filter((t) => t !== option)
+                            : [...tiposEventoSeleccionados, option]
+                        );
+                      };
+                    } else {
+                      selected = false;
+                      onChangeHandler = () => {};
+                    }
+
                     return (
                       <label
                         key={option}
@@ -89,15 +128,8 @@ export const EventFilters: React.FC<Props> = ({
                           name={filter.key}
                           value={option}
                           checked={selected}
-                          onChange={() => {
-                            setCategoriasSeleccionadas(
-                              selected
-                                ? categoriasSeleccionadas.filter((c) => c !== option)
-                                : [...categoriasSeleccionadas, option]
-                            );
-                          }}
-                          className="w-5 h-5 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-2 focus:ring-red-500 transition-all"
-                        />
+                          onChange={onChangeHandler}
+                          className="w-5 h-5 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-2 focus:ring-red-500 transition-all"/>
                         <span className="text-base text-gray-800 capitalize">{option}</span>
                       </label>
                     );
@@ -293,6 +325,23 @@ export const EventFilters: React.FC<Props> = ({
                       Limpiar
                     </button>
                   </div>
+                </div>
+              ) : filter.type === "date" ? (
+                <div className="flex flex-col gap-2 p-2">
+                  <label className="text-xs text-gray-600">Fecha inicio</label>
+                  <input
+                    type="date"
+                    value={fechaInicio}
+                    onChange={e => setFechaInicio(e.target.value)}
+                    className="border rounded px-2 py-1"
+                  />
+                  <label className="text-xs text-gray-600">Fecha fin</label>
+                  <input
+                    type="date"
+                    value={fechaFin}
+                    onChange={e => setFechaFin(e.target.value)}
+                    className="border rounded px-2 py-1"
+                  />
                 </div>
               ) : null
             )}

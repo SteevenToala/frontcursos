@@ -37,17 +37,22 @@ export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [categoriasLoading, setCategoriasLoading] = useState(true);
+  const [categorias, setCategorias] = useState<string[]>([]);
   const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([]);
   const [modalidad, setModalidad] = useState("");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [precioSeleccionado, setPrecioSeleccionado] = useState<{ min: number; max: number | null }>({ min: 0, max: null });
   const [precioMin, setPrecioMin] = useState("");
   const [precioMax, setPrecioMax] = useState("");
-  const [categorias, setCategorias] = useState<string[]>([]);
   const [modalidades, setModalidades] = useState<string[]>([]);
-  const [categoriasLoading, setCategoriasLoading] = useState(true);
   const [paginaActual, setPaginaActual] = useState(1);
   const eventosPorPagina = 6;
+  const [fechaInicio, setFechaInicio] = useState<string>("");
+  const [fechaFin, setFechaFin] = useState<string>("");
+  const [tiposEvento, setTiposEvento] = useState<string[]>([]);
+  const [tiposEventoSeleccionados, setTiposEventoSeleccionados] = useState<string[]>([]);
+
   const filteredEvents = events.filter(event =>
     event.nombre.toLowerCase().includes(search.toLowerCase()) ||
     event.categoria.toLowerCase().includes(search.toLowerCase()) ||
@@ -63,7 +68,16 @@ export default function EventsPage() {
     if (precioSeleccionado.min > 0 && event.costo < precioSeleccionado.min) return false;
     if (precioSeleccionado.max !== null && event.costo > precioSeleccionado.max) return false;
     return true;
-  });
+  })
+  .filter(event => {
+    // Filtro de fechas
+    if (fechaInicio && new Date(event.fechaInicio) < new Date(fechaInicio)) return false;
+    if (fechaFin && new Date(event.fechaFin) > new Date(fechaFin)) return false;
+    return true;
+  })
+  .filter(event =>
+    tiposEventoSeleccionados.length === 0 || tiposEventoSeleccionados.includes(event.tipoEvento)
+  );
 
   const totalPaginas = Math.ceil(filteredEvents.length / eventosPorPagina);
   const eventosPaginados = filteredEvents.slice(
@@ -89,7 +103,19 @@ export default function EventsPage() {
       label: "Precio",
       options: [],
       type: "range" as const,
-    }
+    },
+    {
+      key: "Fecha" as const,
+      label: "Fecha",
+      options: [], // No necesitas opciones aquí
+      type: "date" as const,
+    },
+    {
+      key: "TipoEvento" as const,
+      label: "Tipo de Evento",
+      options: tiposEvento, // Lo definimos abajo
+      type: "checkbox" as const,
+    },
   ];
 
   // Datos de para eventos
@@ -102,28 +128,40 @@ export default function EventsPage() {
 
         //Datos null/undefined mezclados
         if (Array.isArray(data) && data.length > 0) {
+
+          // Categorías únicas
           const categoriasUnicas = [...new Set(
             data
               .map(evento => evento.categoria)
               .filter(categoria => categoria && typeof categoria === 'string')
               .map(categoria => categoria.trim().toLowerCase())
           )];
+          setCategorias(categoriasUnicas);
           
+          // Modalidades únicas
           const modalidadesUnicas = [...new Set(
             data
               .map(evento => evento.modalidad)
               .filter(modalidad => modalidad && typeof modalidad === 'string')
               .map(modalidad => modalidad.trim().toLowerCase())
           )];
-          
-          setCategorias(categoriasUnicas);
           setModalidades(modalidadesUnicas);
+
+          // Tipos de evento únicos 
+          const tiposEventoUnicos = [...new Set(
+            data
+              .map(evento => evento.tipoEvento)
+              .filter(tipo => tipo && typeof tipo === 'string')
+              .map(tipo => tipo.trim())
+          )];
+          setTiposEvento(tiposEventoUnicos);
         }
 
       } catch (error) {
         setEvents([]);
         setCategorias([]);
         setModalidades([]);
+        setTiposEvento([]);
       } finally {
         setLoading(false);
         setCategoriasLoading(false);
@@ -207,6 +245,12 @@ export default function EventsPage() {
                   setPrecioMin={setPrecioMin}
                   precioMax={precioMax}
                   setPrecioMax={setPrecioMax}
+                  fechaInicio={fechaInicio}
+                  setFechaInicio={setFechaInicio}
+                  fechaFin={fechaFin}
+                  setFechaFin={setFechaFin}
+                  tiposEventoSeleccionados={tiposEventoSeleccionados}
+                  setTiposEventoSeleccionados={setTiposEventoSeleccionados}
                   filters={filters}
                 />
               )}
