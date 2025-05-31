@@ -96,9 +96,9 @@ export const EventFilters: React.FC<Props> = ({
                                 : [...categoriasSeleccionadas, option]
                             );
                           }}
-                          className="form-checkbox h-5 w-5 rounded border-gray-300 text-red-600 focus:ring-red-500 transition"
+                          className="w-5 h-5 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-2 focus:ring-red-500 transition-all"
                         />
-                        <span className="text-base text-gray-800">{option}</span>
+                        <span className="text-base text-gray-800 capitalize">{option}</span>
                       </label>
                     );
                   })}
@@ -116,7 +116,7 @@ export const EventFilters: React.FC<Props> = ({
                         onChange={() => setModalidad(option)}
                         className="w-5 h-5 rounded-full border border-gray-300 text-red-600 focus:ring-red-500"
                       />
-                      <span className="text-base text-gray-900">{option}</span>
+                      <span className="text-base text-gray-900 capitalize">{option}</span>
                     </label>
                   ))}
                 </div>

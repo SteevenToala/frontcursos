@@ -1,7 +1,7 @@
 "use client";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import * as eventosService from "../../../Services/eventosService";
+import * as eventosService from "../../Services/eventosService";
 import { SiteLayout } from "@/components/site-layout";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Users, Clock, User, Heart, Share2, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import '../../../globals.css'
+import '../../globals.css'
 
 function formatFecha(fechaStr: string) {
   if (!fechaStr) return "";

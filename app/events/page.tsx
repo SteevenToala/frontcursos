@@ -46,9 +46,8 @@ export default function EventsPage() {
   const [categorias, setCategorias] = useState<string[]>([]);
   const [modalidades, setModalidades] = useState<string[]>([]);
   const [categoriasLoading, setCategoriasLoading] = useState(true);
-  const [precioMinRange, setPrecioMinRange] = useState(0);
-  const [precioMaxRange, setPrecioMaxRange] = useState(1000);
-
+  const [paginaActual, setPaginaActual] = useState(1);
+  const eventosPorPagina = 6;
   const filteredEvents = events.filter(event =>
     event.nombre.toLowerCase().includes(search.toLowerCase()) ||
     event.categoria.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,6 +64,12 @@ export default function EventsPage() {
     if (precioSeleccionado.max !== null && event.costo > precioSeleccionado.max) return false;
     return true;
   });
+
+  const totalPaginas = Math.ceil(filteredEvents.length / eventosPorPagina);
+  const eventosPaginados = filteredEvents.slice(
+    (paginaActual - 1) * eventosPorPagina,
+    paginaActual * eventosPorPagina
+  );
   
   const filters = [
     {
@@ -126,6 +131,10 @@ export default function EventsPage() {
     }
     fetchEventos();
   }, []);
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [search, categoriasSeleccionadas, modalidad, precioSeleccionado])
 
     // Loader mientras carga
   if (loading) {
@@ -205,61 +214,11 @@ export default function EventsPage() {
 
             {/* Contenido principal */}
             <div className="flex-1">
-              {/* Eventos destacados */}
-              <div className="mb-12">
-                <h2 className="text-2xl font-bold mb-6">Eventos destacados</h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {filteredEvents
-                    .slice(0, 4) // Primeros 4 como destacados
-                    .map((event) => (
-                      <div
-                        key={event.id_evento}
-                        className="flex flex-col md:flex-row bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        <div className="md:w-2/5 relative h-48 md:h-auto">
-                          <Image
-                            src={event.urlfoto || "/placeholder.svg"}
-                            alt={event.nombre}
-                            fill
-                            className="object-cover"
-                          />
-                          <Badge className="absolute top-4 left-4 bg-primary">{event.categoria}</Badge>
-                        </div>
-                        <div className="md:w-3/5 p-6">
-                          <h3 className="font-bold text-xl mb-2">{event.nombre}</h3>
-                          <p className="text-muted-foreground mb-4 line-clamp-2">{event.descripcion}</p>
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center text-muted-foreground">
-                              <Calendar className="h-4 w-4 mr-2" />
-                              <div>
-                                <p className="font-medium">{formatFecha(event.fechaInicio)}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {formatHora(event.fechaInicio)} - {formatHora(event.fechaFin)}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center text-muted-foreground">
-                              <MapPin className="h-4 w-4 mr-2" />
-                              <span className="text-sm">{event.modalidad}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-primary">{event.costo ? `$${event.costo}` : "Gratis"}</span>
-                            <Button asChild className="auth-button">
-                              <Link href={`/events/${event.id_evento}`}>Ver detalles</Link>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
               {/* Todos los eventos */}
               <div>
                 <h2 className="text-2xl font-bold mb-6">Todos los eventos</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredEvents.map((event) => (
+                  {eventosPaginados.map((event) => (
                     <div
                       key={event.id_evento}
                       className="bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
@@ -305,15 +264,28 @@ export default function EventsPage() {
                   ))}
                 </div>
                 
-                <div className="text-center mt-10">
-                  <Button variant="outline" className="border-primary/30 text-primary">
-                    Cargar más eventos
-                  </Button>
+                <div className="flex justify-center mt-10 gap-2">
+                  <button onClick={() => setPaginaActual(paginaActual -1)}
+                    disabled={paginaActual === 1}
+                    className="px-3 py-1 rounded border text-primary disabled:opacity-50">
+                      &lt;
+                  </button>
+                  {Array.from({ length: totalPaginas }, (_, i) => (
+                    <button key={i +1} onClick={() => setPaginaActual(i + 1)} 
+                    className={`px-3 py-1 rounded border ${paginaActual === i + 1 ? 'bg-red-600 text-white' : 'text-primary'}`}>
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button onClick={() => setPaginaActual(paginaActual + 1)} disabled = {paginaActual === totalPaginas}
+                    className="px-3 py-1 rounded border text-primary disabled:opacity-50">
+                      &gt;
+                  </button>
                 </div>
+
               </div>
             </div>
-            </div>
           </div>
+        </div>
       </section>
 
       {/* CTA Section */}
