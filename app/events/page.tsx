@@ -269,7 +269,7 @@ export default function EventsPage() {
                     >
                       <div className="relative h-48">
                         <Image
-                          src={event.urlfoto || "/placeholder.svg"}
+                          src={event.urlFoto || "/placeholder.svg"}
                           alt={event.nombre}
                           fill
                           className="object-cover"

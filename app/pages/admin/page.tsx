@@ -9,12 +9,14 @@ import Autoridade from './sections/Autoridades';
 import Solicitudes from './sections/Solicitudes';
 import StorageNavegador from '@/app/Services/StorageNavegador';
 import { useRouter } from "next/navigation"
+import Eventos from './sections/Eventos';
 
 const sectionComponents: { [key: string]: React.ReactNode } = {
   dashboard: <Inicio />,
   mision_vision: <MisionVision />,
   autoridades: <Autoridade />,
-  solicitudes: <Solicitudes />
+  solicitudes: <Solicitudes />,
+  eventos: <Eventos />
 };
 
 export default function SidebarLayout() {

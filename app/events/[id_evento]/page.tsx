@@ -126,7 +126,7 @@ export default function DetalleEventoPage() {
               {/* Imagen del evento */}
               <div className="relative h-64 md:h-80 rounded-lg overflow-hidden mb-8">
                 <Image
-                  src={evento.urlfoto || "/placeholder.svg"}
+                  src={evento.urlFoto || "/placeholder.svg"}
                   alt={evento.nombre}
                   fill
                   className="object-cover"
