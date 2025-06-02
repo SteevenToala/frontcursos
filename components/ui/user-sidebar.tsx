@@ -1,5 +1,5 @@
-import User from "@/app/models/User"
-import StorageNavegador from "@/app/Services/StorageNavegador"
+import Users from "../../app/models/User"
+import StorageNavegador from "../../app/Services/StorageNavegador"
 import {
   LayoutDashboard,
   BookOpen,
@@ -14,12 +14,12 @@ import { useState, useRef, useEffect } from "react"
 type UserSidebarProps = {
   active: string
   onSelect: (section: string) => void
-  user: User
+  user: Users
 }
 
 const navItems = [
   { id: "dashboard", label: "Panel Principal", icon: LayoutDashboard },
-  { id: "courses", label: "Mis Cursos", icon: BookOpen },
+  { id: "events", label: "Mis Eventos", icon: BookOpen },
   { id: "personal", label: "Información Personal", icon: UserIcon },
   { id: "certificates", label: "Certificados", icon: Award },
 ]
@@ -46,17 +46,10 @@ export function UserSidebar({ active, onSelect, user }: UserSidebarProps) {
   }, [])
 
   return (
-    <aside className="w-64 h-full flex flex-col justify-between bg-card border-r border-border shadow-sm">
-      {/* Header */}
+    <aside className="w-64 h-full flex flex-col justify-between bg-card border-r border-border shadow-sm">      {/* Header */}
       <div className="p-6 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
-            <span className="text-white font-bold text-lg">E</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-primary">EduEvents</h2>
-            <p className="text-sm text-muted-foreground">Dashboard</p>
-          </div>
+        <div className="flex items-center">
+          <h2 className="text-lg font-bold text-primary">Dashboard</h2>
         </div>
       </div>
 
