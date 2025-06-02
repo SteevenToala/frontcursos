@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
+import { Badge } from "../ui/badge"
 import { 
   Select, 
   SelectContent, 
@@ -10,6 +11,9 @@ import {
   SelectValue 
 } from "../ui/select"
 import User from "../../app/models/User"
+import Certificado from "../../app/models/Certificado"
+import Inscripcion from "../../app/models/Inscripcion"
+import Evento from "../../app/models/Evento"
 import { 
   Award,
   Download,
@@ -21,8 +25,19 @@ import {
   CheckCircle,
   ExternalLink,
   Star,
-  Trophy
+  Trophy,
+  FileText,
+  Clock,
+  MapPin
 } from "lucide-react"
+
+// Interface for certificate data with related event and inscription info
+interface CertificateWithDetails extends Certificado {
+  inscripcion: Inscripcion;
+  evento: Evento;
+  calificacion?: number;
+  asistencia_porcentaje?: number;
+}
 
 interface CertificatesProps {
   user: User
@@ -32,103 +47,195 @@ export function Certificates({ user }: CertificatesProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterBy, setFilterBy] = useState("all")
 
-  // Datos mock de certificados
-  const certificates = [
+  // Mock data based on database schema - eventos con certificados
+  const certificatesWithDetails: CertificateWithDetails[] = [
     {
-      id: 1,
-      courseName: "Desarrollo Web con React",
-      instructor: "Ana García",
-      completionDate: "2024-01-20",
-      certificateNumber: "CERT-2024-001-WR",
-      grade: "A+",
-      rating: 4.8,
-      hours: 40,
-      skills: ["React", "JavaScript", "HTML", "CSS", "Node.js"],
-      verified: true,
-      category: "Desarrollo",
-      downloadUrl: "/certificates/react-course.pdf",
-      shareUrl: "https://eduevents.com/certificates/verify/CERT-2024-001-WR"
+      id_certificado: 1,
+      id_inscripcion: 1,
+      tipo_certificado: "Participación",
+      fecha_emision: new Date("2024-01-20"),
+      url_certificado: "/certificates/react-development.pdf",
+      calificacion: 95,
+      asistencia_porcentaje: 100,
+      inscripcion: {
+        id_inscripcion: 1,
+        id_usuario: user.uid_firebase,
+        id_evento: 1,
+        fecha_inscripcion: new Date("2023-12-01"),
+        estado_pago: "Pagado",
+        forma_pago: "Tarjeta",
+        comprobante_pago: "PAY-001",
+        estado_inscripcion: "Completado"
+      },
+      evento: {
+        id_evento: 1,
+        nombre: "Desarrollo Web con React y Next.js",
+        tipo_evento: "Curso",
+        fecha_inicio: new Date("2023-12-15"),
+        fecha_fin: new Date("2024-01-15"),
+        modalidad: "Virtual",
+        costo: 150,
+        organizador: 1,
+        carrera_dirigida: "Ingeniería de Sistemas",
+        categoria_area: "Desarrollo Web",
+        num_horas: 40,
+        nota_aprobacion: 70,
+        requiere_asistencia: true,
+        requiere_nota: true,
+        url_foto: "/images/react-course.jpg",
+        id_seccion: 1,
+        visible: true,
+        descripcion: "Curso completo de desarrollo web moderno con React y Next.js"
+      }
     },
     {
-      id: 2,
-      courseName: "Python para Data Science",
-      instructor: "Dr. Roberto Silva",
-      completionDate: "2024-01-15",
-      certificateNumber: "CERT-2024-002-PDS",
-      grade: "A",
-      rating: 4.7,
-      hours: 35,
-      skills: ["Python", "Pandas", "NumPy", "Matplotlib", "Machine Learning"],
-      verified: true,
-      category: "Data Science",
-      downloadUrl: "/certificates/python-datascience.pdf",
-      shareUrl: "https://eduevents.com/certificates/verify/CERT-2024-002-PDS"
+      id_certificado: 2,
+      id_inscripcion: 2,
+      tipo_certificado: "Aprobación",
+      fecha_emision: new Date("2024-01-10"),
+      url_certificado: "/certificates/python-datascience.pdf",
+      calificacion: 88,
+      asistencia_porcentaje: 95,
+      inscripcion: {
+        id_inscripcion: 2,
+        id_usuario: user.uid_firebase,
+        id_evento: 2,
+        fecha_inscripcion: new Date("2023-11-20"),
+        estado_pago: "Pagado",
+        forma_pago: "Transferencia",
+        comprobante_pago: "PAY-002",
+        estado_inscripcion: "Completado"
+      },
+      evento: {
+        id_evento: 2,
+        nombre: "Python para Data Science",
+        tipo_evento: "Taller",
+        fecha_inicio: new Date("2023-12-01"),
+        fecha_fin: new Date("2024-01-05"),
+        modalidad: "Presencial",
+        costo: 200,
+        organizador: 2,
+        carrera_dirigida: "Ingeniería de Sistemas",
+        categoria_area: "Data Science",
+        num_horas: 35,
+        nota_aprobacion: 75,
+        requiere_asistencia: true,
+        requiere_nota: true,
+        url_foto: "/images/python-course.jpg",
+        id_seccion: 2,
+        visible: true,
+        descripcion: "Taller intensivo de análisis de datos con Python"
+      }
     },
     {
-      id: 3,
-      courseName: "Diseño UX/UI con Figma",
-      instructor: "María Rodríguez",
-      completionDate: "2023-12-10",
-      certificateNumber: "CERT-2023-015-UXF",
-      grade: "A+",
-      rating: 4.9,
-      hours: 30,
-      skills: ["Figma", "Design Thinking", "Prototyping", "User Research", "UI Design"],
-      verified: true,
-      category: "Diseño",
-      downloadUrl: "/certificates/ux-ui-figma.pdf",
-      shareUrl: "https://eduevents.com/certificates/verify/CERT-2023-015-UXF"
+      id_certificado: 3,
+      id_inscripcion: 3,
+      tipo_certificado: "Participación",
+      fecha_emision: new Date("2023-12-15"),
+      url_certificado: "/certificates/ux-ui-design.pdf",
+      calificacion: 92,
+      asistencia_porcentaje: 90,
+      inscripcion: {
+        id_inscripcion: 3,
+        id_usuario: user.uid_firebase,
+        id_evento: 3,
+        fecha_inscripcion: new Date("2023-10-15"),
+        estado_pago: "Pagado",
+        forma_pago: "Efectivo",
+        comprobante_pago: "PAY-003",
+        estado_inscripcion: "Completado"
+      },
+      evento: {
+        id_evento: 3,
+        nombre: "Diseño UX/UI con Figma",
+        tipo_evento: "Seminario",
+        fecha_inicio: new Date("2023-11-01"),
+        fecha_fin: new Date("2023-12-10"),
+        modalidad: "Híbrido",
+        costo: 120,
+        organizador: 3,
+        carrera_dirigida: "Diseño Gráfico",
+        categoria_area: "Diseño",
+        num_horas: 30,
+        nota_aprobacion: 70,
+        requiere_asistencia: true,
+        requiere_nota: false,
+        url_foto: "/images/figma-course.jpg",
+        id_seccion: 3,
+        visible: true,
+        descripcion: "Seminario completo de diseño de interfaces con Figma"
+      }
     }
   ]
 
-  const filteredCertificates = certificates.filter(cert => {
-    const matchesSearch = cert.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cert.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cert.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredCertificates = certificatesWithDetails.filter(cert => {
+    const matchesSearch = cert.evento.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         cert.evento.categoria_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         cert.tipo_certificado.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesFilter = filterBy === "all" || cert.category.toLowerCase() === filterBy.toLowerCase()
+    const matchesFilter = filterBy === "all" || 
+                         cert.evento.categoria_area.toLowerCase().includes(filterBy.toLowerCase()) ||
+                         cert.evento.tipo_evento.toLowerCase().includes(filterBy.toLowerCase())
     
     return matchesSearch && matchesFilter
   })
 
   const stats = {
-    totalCertificates: certificates.length,
-    totalHours: certificates.reduce((sum, cert) => sum + cert.hours, 0),
-    avgRating: (certificates.reduce((sum, cert) => sum + cert.rating, 0) / certificates.length).toFixed(1),
-    skillsEarned: [...new Set(certificates.flatMap(cert => cert.skills))].length
+    totalCertificates: certificatesWithDetails.length,
+    totalHours: certificatesWithDetails.reduce((sum, cert) => sum + cert.evento.num_horas, 0),
+    avgGrade: certificatesWithDetails.filter(cert => cert.calificacion).length > 0 
+      ? (certificatesWithDetails
+          .filter(cert => cert.calificacion)
+          .reduce((sum, cert) => sum + (cert.calificacion || 0), 0) / 
+         certificatesWithDetails.filter(cert => cert.calificacion).length).toFixed(1)
+      : "N/A",
+    categoriesCompleted: [...new Set(certificatesWithDetails.map(cert => cert.evento.categoria_area))].length
+  }
+  const handleDownload = (certificate: CertificateWithDetails) => {
+    console.log(`Descargando certificado: CERT-${certificate.id_certificado}`)
+    // Aquí iría la lógica para descargar el certificado desde certificate.url_certificado
+    window.open(certificate.url_certificado, '_blank')
   }
 
-  const handleDownload = (certificate: any) => {
-    console.log(`Descargando certificado: ${certificate.certificateNumber}`)
-    // Aquí iría la lógica para descargar el certificado
-  }
-
-  const handleShare = (certificate: any) => {
-    navigator.clipboard.writeText(certificate.shareUrl)
-    console.log(`URL copiada: ${certificate.shareUrl}`)
+  const handleShare = (certificate: CertificateWithDetails) => {
+    const shareUrl = `${window.location.origin}/certificates/verify/${certificate.id_certificado}`
+    navigator.clipboard.writeText(shareUrl)
+    console.log(`URL copiada: ${shareUrl}`)
     // Mostrar notificación de éxito
   }
 
-  const getGradeColor = (grade: string) => {
-    switch (grade) {
-      case "A+":
-        return "text-green-600 bg-green-100"
-      case "A":
-        return "text-blue-600 bg-blue-100"
-      case "B+":
-        return "text-yellow-600 bg-yellow-100"
+  const getCertificateTypeColor = (tipo: string) => {
+    switch (tipo.toLowerCase()) {
+      case "aprobación":
+        return "bg-green-100 text-green-800"
+      case "participación":
+        return "bg-blue-100 text-blue-800"
+      case "excelencia":
+        return "bg-purple-100 text-purple-800"
       default:
-        return "text-gray-600 bg-gray-100"
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getModalityIcon = (modalidad: string) => {
+    switch (modalidad.toLowerCase()) {
+      case "virtual":
+        return "💻"
+      case "presencial":
+        return "🏫"
+      case "híbrido":
+        return "🔄"
+      default:
+        return "📚"
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header con estadísticas */}
+    <div className="space-y-6">      {/* Header con estadísticas */}
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Mis Certificados</h1>
         <p className="text-muted-foreground mb-6">
-          Visualiza y gestiona todos tus certificados obtenidos
+          Visualiza y gestiona todos tus certificados de eventos completados
         </p>
         
         {/* Estadísticas rápidas */}
@@ -150,7 +257,7 @@ export function Certificates({ user }: CertificatesProps) {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <Clock className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Horas totales</p>
@@ -167,7 +274,7 @@ export function Certificates({ user }: CertificatesProps) {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Calificación promedio</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.avgRating}/5</p>
+                  <p className="text-2xl font-bold text-yellow-600">{stats.avgGrade}</p>
                 </div>
               </div>
             </CardContent>
@@ -179,8 +286,8 @@ export function Certificates({ user }: CertificatesProps) {
                   <GraduationCap className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Habilidades</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.skillsEarned}</p>
+                  <p className="text-sm text-muted-foreground">Categorías</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.categoriesCompleted}</p>
                 </div>
               </div>
             </CardContent>
@@ -192,40 +299,39 @@ export function Certificates({ user }: CertificatesProps) {
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar certificados, instructores o habilidades..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Select value={filterBy} onValueChange={setFilterBy}>
-                <SelectTrigger className="w-[160px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
-                  <SelectItem value="desarrollo">Desarrollo</SelectItem>
-                  <SelectItem value="diseño">Diseño</SelectItem>
-                  <SelectItem value="data science">Data Science</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex-1">            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por evento, categoría o tipo de certificado..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
           </div>
+          <div className="flex gap-2">
+            <Select value={filterBy} onValueChange={setFilterBy}>
+              <SelectTrigger className="w-[160px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los filtros</SelectItem>
+                <SelectItem value="desarrollo">Desarrollo Web</SelectItem>
+                <SelectItem value="data science">Data Science</SelectItem>
+                <SelectItem value="diseño">Diseño</SelectItem>
+                <SelectItem value="curso">Cursos</SelectItem>
+                <SelectItem value="taller">Talleres</SelectItem>
+                <SelectItem value="seminario">Seminarios</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          </div>
         </CardContent>
-      </Card>
-
-      {/* Lista de certificados */}
+      </Card>      {/* Lista de certificados */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredCertificates.map((certificate) => (
-          <Card key={certificate.id} className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary">
+          <Card key={certificate.id_certificado} className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary">
             <CardContent className="p-6">
               <div className="space-y-4">
                 {/* Header del certificado */}
@@ -233,58 +339,71 @@ export function Certificates({ user }: CertificatesProps) {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <Trophy className="h-5 w-5 text-primary" />
-                      <span className="text-sm font-medium text-primary">{certificate.category}</span>
-                      {certificate.verified && (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      )}
+                      <Badge variant="secondary" className="text-xs">
+                        {certificate.evento.categoria_area}
+                      </Badge>
+                      <span className="text-lg">{getModalityIcon(certificate.evento.modalidad)}</span>
+                      <Badge className={`text-xs ${getCertificateTypeColor(certificate.tipo_certificado)}`}>
+                        {certificate.tipo_certificado}
+                      </Badge>
                     </div>
                     <h3 className="font-bold text-lg text-foreground leading-tight">
-                      {certificate.courseName}
+                      {certificate.evento.nombre}
                     </h3>
                     <p className="text-muted-foreground text-sm">
-                      Instructor: {certificate.instructor}
+                      {certificate.evento.tipo_evento} • {certificate.evento.modalidad}
                     </p>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold ${getGradeColor(certificate.grade)}`}>
-                    {certificate.grade}
-                  </div>
+                  {certificate.calificacion && (
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-primary">
+                        {certificate.calificacion}%
+                      </div>
+                      <p className="text-xs text-muted-foreground">Calificación</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Información del certificado */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Número de certificado:</span>
-                    <span className="font-mono text-xs">{certificate.certificateNumber}</span>
+                    <span className="text-muted-foreground">ID Certificado:</span>
+                    <span className="font-mono text-xs">CERT-{certificate.id_certificado.toString().padStart(4, '0')}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Fecha de finalización:</span>
-                    <span>{new Date(certificate.completionDate).toLocaleDateString('es-ES')}</span>
+                    <span className="text-muted-foreground">Fecha de emisión:</span>
+                    <span>{certificate.fecha_emision.toLocaleDateString('es-ES')}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Duración:</span>
-                    <span>{certificate.hours} horas</span>
+                    <span className="text-muted-foreground">Duración del evento:</span>
+                    <span>{certificate.evento.num_horas} horas</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Calificación del curso:</span>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span>{certificate.rating}</span>
+                    <span className="text-muted-foreground">Período:</span>
+                    <span>
+                      {certificate.evento.fecha_inicio.toLocaleDateString('es-ES')} - {certificate.evento.fecha_fin.toLocaleDateString('es-ES')}
+                    </span>
+                  </div>
+                  {certificate.asistencia_porcentaje && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Asistencia:</span>
+                      <div className="flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                        <span>{certificate.asistencia_porcentaje}%</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Habilidades obtenidas */}
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-2">Habilidades obtenidas:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {certificate.skills.map((skill, index) => (
-                      <span 
-                        key={index}
-                        className="px-2 py-1 bg-accent text-accent-foreground rounded-md text-xs"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+                {/* Información del evento */}
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Descripción del evento:</p>
+                  <p className="text-sm text-foreground">{certificate.evento.descripcion}</p>
+                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                    <span>Carrera: {certificate.evento.carrera_dirigida}</span>
+                    {certificate.evento.requiere_nota && (
+                      <span>• Nota mínima: {certificate.evento.nota_aprobacion}%</span>
+                    )}
                   </div>
                 </div>
 
@@ -309,7 +428,7 @@ export function Certificates({ user }: CertificatesProps) {
                   <Button 
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(certificate.shareUrl, '_blank')}
+                    onClick={() => window.open(`/certificates/verify/${certificate.id_certificado}`, '_blank')}
                   >
                     <ExternalLink className="h-4 w-4" />
                   </Button>
@@ -318,9 +437,7 @@ export function Certificates({ user }: CertificatesProps) {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      {/* Estado vacío */}
+      </div>      {/* Estado vacío */}
       {filteredCertificates.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
@@ -331,10 +448,10 @@ export function Certificates({ user }: CertificatesProps) {
             <p className="text-muted-foreground mb-4">
               {searchTerm || filterBy !== "all" 
                 ? "Intenta ajustar tus filtros de búsqueda"
-                : "Aún no tienes certificados. ¡Completa un curso para obtener tu primer certificado!"}
+                : "Aún no tienes certificados. ¡Completa un evento para obtener tu primer certificado!"}
             </p>
             <Button className="auth-button">
-              Explorar cursos disponibles
+              Explorar eventos disponibles
             </Button>
           </CardContent>
         </Card>
@@ -350,13 +467,13 @@ export function Certificates({ user }: CertificatesProps) {
             <div>
               <h3 className="font-semibold text-foreground mb-2">Verificación de Certificados</h3>
               <p className="text-muted-foreground text-sm mb-3">
-                Todos nuestros certificados son verificables digitalmente. Puedes compartir el enlace de verificación 
-                con empleadores o agregar el certificado a tu perfil de LinkedIn.
+                Todos nuestros certificados son verificables digitalmente y están respaldados por nuestro sistema 
+                de inscripciones. Cada certificado incluye información del evento, fecha de emisión y tipo de certificación obtenida.
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm">
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Agregar a LinkedIn
+                  Verificar certificado
                 </Button>
                 <Button variant="outline" size="sm">
                   <Share2 className="h-4 w-4 mr-2" />
