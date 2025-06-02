@@ -1,9 +1,25 @@
-interface Users {
-    uid?: string,
+
+// Interface based on the database schema
+interface User {
+    uid_firebase: string; // PK
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    cedula: string;
+    telefono: string;
+    direccion: string;
+    rol: string;
+    carrera: string;
+    estado: string;
+    url_foto: string;
+    
+    // Firebase auth fields (for compatibility)
+    uid?: string;
     email?: string;
-    verify?: Boolean;
+    verify?: boolean;
     token: string;
     username?: string;
     urlUserImg?: string;
 }
-export default Users;
+
+export default User;
