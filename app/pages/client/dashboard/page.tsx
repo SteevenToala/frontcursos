@@ -12,14 +12,19 @@ import StorageNavegador from "../../../Services/StorageNavegador"
 import User from "../../../models/User"
 import '../../../globals.css'
 
-export default function DashboardPage() {  const router = useRouter()
+export default function DashboardPage() {
+  const router = useRouter()
   const [activeSection, setActiveSection] = useState("dashboard")
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
+    setMounted(true)
     // Verificar autenticación del usuario
-    // const userData = StorageNavegador.getItemWithExpiry<Users>("user")
-    // if (!userData) {      // Para desarrollo, usamos un usuario mock basado en el esquema de la BD
+    // const userData = StorageNavegador.getItemWithExpiry<User>("user")
+    // if (!userData) {
+      // Para desarrollo, usamos un usuario mock basado en el esquema de la BD
       const mockUser: User = {
         uid_firebase: "firebaseUID123",
         uid: "1", // Mantener compatibilidad
@@ -48,7 +53,16 @@ export default function DashboardPage() {  const router = useRouter()
     // setLoading(false)
   }, [router])
 
-  // Comentado para testing - siempre usar mock user
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <SiteLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+        </div>
+      </SiteLayout>
+    )
+  }
   // if (loading) {
   //   return (
   //     <SiteLayout>

@@ -1,4 +1,4 @@
-import Users from "@/app/models/User";
+import UserType from "@/app/models/User";
 import StorageNavegador from "@/app/Services/StorageNavegador";
 import {
   LayoutDashboard,
@@ -29,7 +29,7 @@ const navItems = [
 export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
-  const user = StorageNavegador.getItemWithExpiry("user") as Users;
+  const user = StorageNavegador.getItemWithExpiry("user") as User;
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);

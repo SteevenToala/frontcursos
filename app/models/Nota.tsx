@@ -1,7 +1,7 @@
 
 export interface Nota {
-    id_nota: number; // PK
-    id_inscripcion: number; // FK → Inscripcion.id_inscripcion
+    id_nota: number;
+    id_inscripcion: number; 
     nota_final: number;
 }
 

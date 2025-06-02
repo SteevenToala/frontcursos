@@ -1,8 +1,8 @@
 
 export interface Inscripcion {
-    id_inscripcion: number; // PK
-    id_usuario: string; // FK → Usuario.uid_firebase
-    id_evento: number; // FK → Evento.id_evento
+    id_inscripcion: number; 
+    id_usuario: string;
+    id_evento: number; 
     fecha_inscripcion: Date;
     estado_pago: string;
     forma_pago: string;

@@ -14,6 +14,7 @@ import User from "../../app/models/User"
 import Certificado from "../../app/models/Certificado"
 import Inscripcion from "../../app/models/Inscripcion"
 import Evento from "../../app/models/Evento"
+import { formatDate, formatDateRange } from "../../lib/date-utils"
 import { 
   Award,
   Download,
@@ -372,7 +373,7 @@ export function Certificates({ user }: CertificatesProps) {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Fecha de emisión:</span>
-                    <span>{certificate.fecha_emision.toLocaleDateString('es-ES')}</span>
+                    <span>{formatDate(certificate.fecha_emision)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Duración del evento:</span>
@@ -381,7 +382,7 @@ export function Certificates({ user }: CertificatesProps) {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Período:</span>
                     <span>
-                      {certificate.evento.fecha_inicio.toLocaleDateString('es-ES')} - {certificate.evento.fecha_fin.toLocaleDateString('es-ES')}
+                      {formatDateRange(certificate.evento.fecha_inicio, certificate.evento.fecha_fin)}
                     </span>
                   </div>
                   {certificate.asistencia_porcentaje && (

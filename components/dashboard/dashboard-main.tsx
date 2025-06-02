@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import User from "../../app/models/User"
+import { formatDate } from "../../lib/date-utils"
 import { 
   BookOpen, 
   Calendar, 
@@ -224,7 +225,7 @@ export function DashboardMain({ user }: DashboardMainProps) {
                   <h4 className="font-semibold text-foreground text-sm mb-2">{evento.nombre}</h4>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>{evento.fecha_inicio.toLocaleDateString('es-ES')}</span>
+                    <span>{formatDate(evento.fecha_inicio)}</span>
                     <Clock className="h-3 w-3 ml-2" />
                     <span>{evento.hora}</span>
                   </div>

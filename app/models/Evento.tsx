@@ -1,13 +1,13 @@
 
 export interface Evento {
-    id_evento: number; // PK
+    id_evento: number; 
     nombre: string;
     tipo_evento: string;
     fecha_inicio: Date;
     fecha_fin: Date;
     modalidad: string;
     costo: number;
-    organizador: number; // FK → Organizador.id_organizador
+    organizador: number; 
     carrera_dirigida: string;
     categoria_area: string;
     num_horas: number;

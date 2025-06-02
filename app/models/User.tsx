@@ -1,7 +1,6 @@
 
-// Interface based on the database schema
 interface User {
-    uid_firebase: string; // PK
+    uid_firebase: string; 
     nombres: string;
     apellidos: string;
     correo: string;
@@ -13,7 +12,6 @@ interface User {
     estado: string;
     url_foto: string;
     
-    // Firebase auth fields (for compatibility)
     uid?: string;
     email?: string;
     verify?: boolean;

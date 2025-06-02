@@ -1,4 +1,4 @@
-import Users from "../../app/models/User"
+import User from "../../app/models/User"
 import StorageNavegador from "../../app/Services/StorageNavegador"
 import {
   LayoutDashboard,
@@ -14,7 +14,7 @@ import { useState, useRef, useEffect } from "react"
 type UserSidebarProps = {
   active: string
   onSelect: (section: string) => void
-  user: Users
+  user: User
 }
 
 const navItems = [

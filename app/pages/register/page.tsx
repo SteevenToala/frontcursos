@@ -23,7 +23,7 @@ import FirebaseService from "@/app/Services/firebase/FirebaseService"
 
 import '@/app/globals.css'
 import StorageNavegador from "@/app/Services/StorageNavegador"
-import Users from "@/app/models/User"
+import User from "@/app/models/User"
 
 type RegisterFormValues = z.infer<typeof registerSchema>
 
@@ -65,7 +65,7 @@ export default function RegisterPage() {
       // Registrar usuario en Firebase y se almacenan sus credenciales en el localstorage
       await FirebaseService.registerWithEmailAndPassword(values.email, values.password, values.firstName)
       
-      const user = StorageNavegador.getItemWithExpiry("user") as Users;
+      const user = StorageNavegador.getItemWithExpiry("user") as User;
       // Subir imagen a Firebase Storage si existe
       let profileImageUrl = ""
       if (file && user?.uid) {

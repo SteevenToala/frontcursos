@@ -10,6 +10,7 @@ import {
   SelectValue 
 } from "../ui/select"
 import User from "../../app/models/User"
+import { formatDate } from "../../lib/date-utils"
 import { 
   Calendar, 
   Filter, 
@@ -280,7 +281,7 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
                       
                       <div className="text-right space-y-2">
                         <p className="text-sm text-muted-foreground">
-                          Inscrito el {inscripcion.fecha_inscripcion.toLocaleDateString('es-ES')}
+                          Inscrito el {formatDate(inscripcion.fecha_inscripcion)}
                         </p>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
