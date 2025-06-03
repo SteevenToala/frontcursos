@@ -8,6 +8,9 @@ import {
   Settings,
   AlertCircleIcon,
   LogOut,
+  TextSelectIcon,
+  Edit,
+  ClipboardList,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
@@ -24,6 +27,10 @@ const navItems = [
   { id: "autoridades", label: "Autoridades", icon: User },
   { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon },
   { id: "mision_vision", label: "Mision y Vision", icon: Settings },
+  { id: "reportes", label: "Reportes", icon: TextSelectIcon },
+  { id: "calificaciones", label: "Calificaciones", icon: Edit },
+  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList }
+
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
