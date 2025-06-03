@@ -1,7 +1,7 @@
 "use client";
 import '@/app/globals.css';
 import { Autoridad } from '@/app/models/Autoridad';
-import { getAutoridades, updateAutoridades } from '@/app/Services/autoridadesService';
+import { createAutoridades, deleteAutoridades, getAutoridades, updateAutoridades } from '@/app/Services/autoridadesService';
 import FirebaseService from '@/app/Services/firebase/FirebaseService';
 import { FormularioEdicion } from '@/components/admin/formulario-edicion';
 import React, { useEffect, useState } from "react";
@@ -13,6 +13,7 @@ export default function Autoridade() {
     const [editando, setEditando] = useState<Autoridad | null>(null);
     const [formData, setFormData] = useState<Partial<Autoridad>>({});
     const [fotoFile, setFotoFile] = useState<File | null>(null);
+    const [creando, setCreando] = useState(false);
 
     useEffect(() => {
         const fetchAutoridades = async () => {
@@ -50,8 +51,9 @@ export default function Autoridade() {
         }
         if (!editando) return;
         try {
+              const { id_autoridad, ...restFormData } = formData;
             const updated = await updateAutoridades(editando.id_autoridad, {
-                ...formData,
+                ...restFormData,
                 ...(foto_url ? { foto_url } : {}),
             });
             setData(prev =>
@@ -78,12 +80,55 @@ export default function Autoridade() {
         }
     };
 
+    const handleCrear = () => {
+        setFormData({});
+        setPreviewUrl(null);
+        setFotoFile(null);
+        setCreando(true);
+    };
+    const handleGuardarNueva = async () => {
+        const getUltimoOrden = () => {
+            if (data.length === 0) return 0;
+            return Math.max(...data.map(a => a.orden ?? 0));
+        };
+        let foto_url: string | null = null;
+        if (fotoFile && formData.cargo) {
+            foto_url = await FirebaseService.uploadFile(fotoFile, 'autoridades', formData.cargo as string);
+        }
+        try {
+            const nueva = await createAutoridades({
+                ...formData,
+                foto_url: foto_url ?? ""
+            }, getUltimoOrden() + 1
+            );
+            setData(prev => [...prev, nueva]);
+            setCreando(false);
+            setFormData({});
+            setFotoFile(null);
+            setPreviewUrl(null);
+        } catch (error) {
+            console.error("Error al crear autoridad", error);
+        }
+    };
+    const handleEliminar = async (id: number) => {
+        if (!window.confirm("¿Estás seguro de que deseas eliminar esta autoridad?")) return;
+        try {
+            await deleteAutoridades(id);
+            setData(prev => prev.filter(a => a.id_autoridad !== id));
+        } catch (error) {
+            console.error("Error al eliminar autoridad", error);
+        }
+    };
+
+
+
+
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-semibold">Lista de Autoridades</h1>
                 <button
-                    onClick={() => console.log("Crear autoridad")}
+                    onClick={handleCrear}
                     className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
                 >
                     Crear Autoridad
@@ -112,7 +157,7 @@ export default function Autoridade() {
                                     Editar
                                 </button>
                                 <button
-                                    onClick={() => console.log("Eliminar autoridad", autoridad.id_autoridad)}
+                                    onClick={() => handleEliminar(autoridad.id_autoridad)}
                                     className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
                                 >
                                     Eliminar
@@ -136,6 +181,23 @@ export default function Autoridade() {
                     handleGuardar={handleGuardar}
                     handleFileChange={handleFileChange}
                     setEditando={setEditando}
+                />
+            )}
+
+
+            {creando && (
+                <FormularioEdicion
+                    autoridad={null}
+                    formData={formData}
+                    setFormData={setFormData}
+                    previewUrl={previewUrl}
+                    setPreviewUrl={setPreviewUrl}
+                    fotoFile={fotoFile}
+                    setFotoFile={setFotoFile}
+                    handleChange={handleChange}
+                    handleGuardar={handleGuardarNueva}
+                    handleFileChange={handleFileChange}
+                    setEditando={() => setCreando(false)}
                 />
             )}
         </div>
