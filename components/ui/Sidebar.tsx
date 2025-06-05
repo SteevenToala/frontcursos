@@ -33,7 +33,7 @@ const navItems = [
   { id: "reportes", label: "Reportes", icon: TextSelectIcon },
   { id: "calificaciones", label: "Calificaciones", icon: Edit },
   { id: "inscripciones", label: "Inscripciones", icon: ClipboardList },
-   // Nuevo item
+  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User }
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {

@@ -20,7 +20,6 @@ class Solicitud {
         }
 
         const data = await response.json();
-        console.log(data);
         return data;
     }
 
@@ -40,26 +39,46 @@ class Solicitud {
         console.log(data);
         return data;
     }
-    static async actualizarEstado(estado: string, id: number, descripcion: string) {
+    static async actualizarEstado(payload: {
+        idSolicitud: number;
+        estado: 'Aprobado' | 'Rechazado';
+        justificacion: string;
+    }) {
         const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud/actualizar/${id}`, {
-            method: 'PATCH',
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/registro-aprobacion`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 "Authorization": `Bearer ${idTokenString?.token}`
             },
-            body: JSON.stringify({
-                estado: estado,
-                descripcion: descripcion
-            })
+            body: JSON.stringify(payload)
         })
         if (!response.ok) {
-            throw new Error(`Error al crear el usuario: ${response.statusText}`);
+            throw new Error(`Error al actualizar el estado: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log(data);
         return data;
     }
+
+
+    static async obtenerReporteAprobaciones() {
+        const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/registro-aprobacion`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    "Authorization": `Bearer ${idTokenString?.token}`
+                }
+            });
+            if (!response.ok) throw new Error('Error al obtener el reporte');
+            return await response.json();
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
+    };
+
+
 }
 export default Solicitud;
