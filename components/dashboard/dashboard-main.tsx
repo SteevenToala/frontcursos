@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react"
+import { getDashboardDataUsuario } from "../../app/Services/usuarioService"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import User from "../../app/models/User"
 import { formatDate } from "../../lib/date-utils"
+import { isValid, parseISO } from "date-fns"
 import { 
   BookOpen, 
   Calendar, 
@@ -21,73 +24,79 @@ interface DashboardMainProps {
 }
 
 export function DashboardMain({ user }: DashboardMainProps) {
-  // Datos del dashboard basados en el esquema de la BD
-  const dashboardStats = {
-    eventosInscritos: 5,
-    eventosCompletados: 3,
-    certificadosObtenidos: 2,
-    horasTotales: 24,
-    asistenciasRegistradas: 15,
-    notasAprobatorias: 3
-  }
-  const eventosRecientes = [
-    {
-      id_evento: 1,
-      nombre: "Desarrollo Web con React",
-      tipo_evento: "Curso",
-      fecha_inicio: new Date("2024-01-15"),
-      fecha_fin: new Date("2024-02-15"),
-      modalidad: "Virtual",
-      num_horas: 40,
-      estado_inscripcion: "activo",
-      progreso: 75,
-      url_foto: "/placeholder.svg",
-      organizador: "Ana García"
-    },
-    {
-      id_evento: 2,
-      nombre: "JavaScript Moderno ES6+",
-      tipo_evento: "Taller",
-      fecha_inicio: new Date("2024-02-01"),
-      fecha_fin: new Date("2024-02-28"),
-      modalidad: "Presencial",
-      num_horas: 20,
-      estado_inscripcion: "completado",
-      progreso: 100,
-      url_foto: "/placeholder.svg",
-      organizador: "Carlos López"
-    },
-    {
-      id_evento: 3,
-      nombre: "Diseño UX/UI Avanzado",
-      tipo_evento: "Diplomado",
-      fecha_inicio: new Date("2024-03-01"),
-      fecha_fin: new Date("2024-04-30"),
-      modalidad: "Híbrido",
-      num_horas: 60,
-      estado_inscripcion: "pendiente_pago",
-      progreso: 0,
-      url_foto: "/placeholder.svg",
-      organizador: "María Rodríguez"
-    }
-  ]
+  const [dashboardStats, setDashboardStats] = useState({
+    eventosInscritos: 0,
+    eventosCompletados: 0,
+    certificadosObtenidos: 0,
+    horasTotales: 0,
+    asistenciasRegistradas: 0,
+    notasAprobatorias: 0
+  })
+  const [eventosRecientes, setEventosRecientes] = useState<any[]>([])
+  const [proximosEventos, setProximosEventos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const proximosEventos = [
-    {
-      id_evento: 4,
-      nombre: "Webinar: Tendencias en Desarrollo 2024",
-      fecha_inicio: new Date("2024-02-15"),
-      hora: "15:00",
-      tipo_evento: "Webinar"
-    },
-    {
-      id_evento: 5,
-      nombre: "Workshop: Figma Avanzado",
-      fecha_inicio: new Date("2024-02-18"),
-      hora: "10:00",
-      tipo_evento: "Workshop"
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchData() {
+      setLoading(true)
+      const uid = user.uid_firebase || user.uid
+      if (!uid) {
+        if (isMounted) setLoading(false)
+        return
+      }
+      try {
+        const dashboardData = await getDashboardDataUsuario(uid)
+        if (!isMounted) return
+        const inscripciones = dashboardData.eventosInscritos || []
+        setDashboardStats({
+          eventosInscritos: inscripciones.length,
+          eventosCompletados: inscripciones.filter((i:any) => i.estado_inscripcion === 'Aprobado' || i.estado_inscripcion === 'Completado').length,
+          certificadosObtenidos: inscripciones.filter((i:any) => (i.estado_inscripcion === 'Aprobado' || i.estado_inscripcion === 'Completado') && (i.nota ? i.nota >= 70 : true)).length,
+          horasTotales: inscripciones.reduce((sum:any, i:any) => sum + (i.evento?.num_horas || 0), 0),
+          asistenciasRegistradas: inscripciones.reduce((sum:any, i:any) => sum + (i.porcentaje_asistencia || 0), 0),
+          notasAprobatorias: inscripciones.filter((i:any) => i.nota && i.nota >= 70).length
+        })
+        setEventosRecientes(inscripciones.slice(0, 3).map((i:any) => ({
+          ...i.evento,
+          estadoInscripcion: i.estado_inscripcion || '',
+          asistencias: i.porcentaje_asistencia,
+          nota_final: i.nota
+        })))
+        setProximosEventos(inscripciones.filter((i:any) => new Date(i.evento.fecha_inicio) > new Date()).map((i:any) => ({
+          ...i.evento,
+          estadoInscripcion: i.estado_inscripcion || '',
+          asistencias: i.porcentaje_asistencia,
+          nota_final: i.nota
+        })))
+      } catch (e) {
+        if (!isMounted) return
+        setDashboardStats({
+          eventosInscritos: 0,
+          eventosCompletados: 0,
+          certificadosObtenidos: 0,
+          horasTotales: 0,
+          asistenciasRegistradas: 0,
+          notasAprobatorias: 0
+        })
+        setEventosRecientes([])
+        setProximosEventos([])
+      }
+      if (isMounted) setLoading(false)
     }
-  ]
+    fetchData()
+    return () => { isMounted = false }
+  }, [user])
+
+  // Reemplaza el uso directo de toLocaleDateString por una función segura
+  function safeFormatDate(dateValue: any) {
+    if (!dateValue) return "-";
+    let dateObj = typeof dateValue === "string" ? parseISO(dateValue) : dateValue;
+    if (!isValid(dateObj)) return "-";
+    return dateObj.toLocaleDateString();
+  }
+
+  if (loading) return <div className="p-8">Cargando dashboard...</div>
 
   return (
     <div className="space-y-8">      {/* Header de bienvenida */}
@@ -170,37 +179,49 @@ export function DashboardMain({ user }: DashboardMainProps) {
             <CardContent className="space-y-4">
               {eventosRecientes.map((evento) => (
                 <div key={evento.id_evento} className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-8 w-8 text-primary" />
+                  {/* Imagen del evento mejorada */}
+                  <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-primary/20 bg-white shadow-sm flex items-center justify-center">
+                    {evento.url_foto ? (
+                      <img src={evento.url_foto} alt={evento.nombre} className="object-cover w-full h-full" loading="lazy" />
+                    ) : (
+                      <Calendar className="h-10 w-10 text-primary" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-foreground">{evento.nombre}</h4>
-                    <p className="text-sm text-muted-foreground">Organizador: {evento.organizador}</p>
+                    <p className="text-sm text-muted-foreground">Organizador: {evento.organizador || 'N/A'}</p>
                     <p className="text-sm text-primary font-medium">Modalidad: {evento.modalidad}</p>
+                    {/* Barra de asistencia */}
                     <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-muted-foreground">Asistencia</span>
                       <div className="flex-1 bg-muted rounded-full h-2">
                         <div 
-                          className="bg-primary h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${evento.progreso}%` }}
+                          className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${evento.asistencias || 0}%` }}
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground">{evento.progreso}%</span>
+                      <span className="text-xs text-muted-foreground">{evento.asistencias || 0}%</span>
                     </div>
+                    {/* Nota final */}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-muted-foreground">Nota:</span>
+                      <span className="font-semibold text-blue-700 text-sm">{evento.nota_final !== undefined ? evento.nota_final : '-'}</span>
+                    </div>
+                    {/* Estado y horas */}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        evento.estado_inscripcion === 'activo' ? 'bg-green-100 text-green-700' :
-                        evento.estado_inscripcion === 'completado' ? 'bg-blue-100 text-blue-700' :
+                        (evento.estadoInscripcion || evento.estado_inscripcion) === 'activo' ? 'bg-green-100 text-green-700' :
+                        (evento.estadoInscripcion || evento.estado_inscripcion) === 'completado' ? 'bg-blue-100 text-blue-700' :
+                        (evento.estadoInscripcion || evento.estado_inscripcion) === 'Aprobado' ? 'bg-blue-100 text-blue-700' :
+                        (evento.estadoInscripcion || evento.estado_inscripcion) === 'Pendiente' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-yellow-100 text-yellow-700'
                       }`}>
-                        {evento.estado_inscripcion.toUpperCase()}
+                        {((evento.estadoInscripcion || evento.estado_inscripcion) || 'Sin estado')?.toString().toUpperCase()}
                       </span>
-                      <span>{evento.num_horas} horas</span>
+                      <span>{evento.num_horas || evento.numeroHoras || 0} horas</span>
                     </div>
                   </div>
-                  <Button size="sm" className="auth-button" disabled={evento.estado_inscripcion === 'pendiente_pago'}>
-                    {evento.estado_inscripcion === 'pendiente_pago' ? 'Pagar' : 'Continuar'}
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
+                  
                 </div>
               ))}
             </CardContent>
@@ -225,7 +246,7 @@ export function DashboardMain({ user }: DashboardMainProps) {
                   <h4 className="font-semibold text-foreground text-sm mb-2">{evento.nombre}</h4>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>{formatDate(evento.fecha_inicio)}</span>
+                    <span>{safeFormatDate(evento.fecha_inicio || evento.fechaInicio)}</span>
                     <Clock className="h-3 w-3 ml-2" />
                     <span>{evento.hora}</span>
                   </div>
