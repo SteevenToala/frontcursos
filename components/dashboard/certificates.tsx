@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -31,6 +31,7 @@ import {
   Clock,
   MapPin
 } from "lucide-react"
+import { getDashboardDataUsuario } from "../../app/Services/usuarioService"
 
 // Interface for certificate data with related event and inscription info
 interface CertificateWithDetails extends Certificado {
@@ -47,136 +48,56 @@ interface CertificatesProps {
 export function Certificates({ user }: CertificatesProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterBy, setFilterBy] = useState("all")
+  const [certificatesWithDetails, setCertificatesWithDetails] = useState<CertificateWithDetails[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock data based on database schema - eventos con certificados
-  const certificatesWithDetails: CertificateWithDetails[] = [
-    {
-      id_certificado: 1,
-      id_inscripcion: 1,
-      tipo_certificado: "Participación",
-      fecha_emision: new Date("2024-01-20"),
-      url_certificado: "/certificates/react-development.pdf",
-      calificacion: 95,
-      asistencia_porcentaje: 100,
-      inscripcion: {
-        id_inscripcion: 1,
-        id_usuario: user.uid_firebase,
-        id_evento: 1,
-        fecha_inscripcion: new Date("2023-12-01"),
-        estado_pago: "Pagado",
-        forma_pago: "Tarjeta",
-        comprobante_pago: "PAY-001",
-        estado_inscripcion: "Completado"
-      },
-      evento: {
-        id_evento: 1,
-        nombre: "Desarrollo Web con React y Next.js",
-        tipo_evento: "Curso",
-        fecha_inicio: new Date("2023-12-15"),
-        fecha_fin: new Date("2024-01-15"),
-        modalidad: "Virtual",
-        costo: 150,
-        organizador: 1,
-        carrera_dirigida: "Ingeniería de Sistemas",
-        categoria_area: "Desarrollo Web",
-        num_horas: 40,
-        nota_aprobacion: 70,
-        requiere_asistencia: true,
-        requiere_nota: true,
-        url_foto: "/images/react-course.jpg",
-        id_seccion: 1,
-        visible: true,
-        descripcion: "Curso completo de desarrollo web moderno con React y Next.js"
+  useEffect(() => {
+    async function fetchCertificates() {
+      setLoading(true)
+      setError(null)
+      try {
+        const uid = user.uid_firebase || user.uid
+        if (!uid) {
+          setCertificatesWithDetails([])
+          setLoading(false)
+          return
+        }
+        const dashboardData = await getDashboardDataUsuario(uid)
+        // Solo certificados aprobados (estado_inscripcion === 'Aprobado' o 'Completado')
+        const certificados = (dashboardData.eventosInscritos || []).filter((i:any) => i.estado_inscripcion === 'Aprobado' || i.estado_inscripcion === 'Completado')
+        // Mapear a formato CertificateWithDetails
+        const details = certificados.map((i:any) => ({
+          id_certificado: i.id_inscripcion, // o el campo correcto si existe
+          inscripcion: i,
+          evento: i.evento,
+          calificacion: i.nota,
+          asistencia_porcentaje: i.porcentaje_asistencia
+        }))
+        setCertificatesWithDetails(details)
+      } catch (e) {
+        setCertificatesWithDetails([])
       }
-    },
-    {
-      id_certificado: 2,
-      id_inscripcion: 2,
-      tipo_certificado: "Aprobación",
-      fecha_emision: new Date("2024-01-10"),
-      url_certificado: "/certificates/python-datascience.pdf",
-      calificacion: 88,
-      asistencia_porcentaje: 95,
-      inscripcion: {
-        id_inscripcion: 2,
-        id_usuario: user.uid_firebase,
-        id_evento: 2,
-        fecha_inscripcion: new Date("2023-11-20"),
-        estado_pago: "Pagado",
-        forma_pago: "Transferencia",
-        comprobante_pago: "PAY-002",
-        estado_inscripcion: "Completado"
-      },
-      evento: {
-        id_evento: 2,
-        nombre: "Python para Data Science",
-        tipo_evento: "Taller",
-        fecha_inicio: new Date("2023-12-01"),
-        fecha_fin: new Date("2024-01-05"),
-        modalidad: "Presencial",
-        costo: 200,
-        organizador: 2,
-        carrera_dirigida: "Ingeniería de Sistemas",
-        categoria_area: "Data Science",
-        num_horas: 35,
-        nota_aprobacion: 75,
-        requiere_asistencia: true,
-        requiere_nota: true,
-        url_foto: "/images/python-course.jpg",
-        id_seccion: 2,
-        visible: true,
-        descripcion: "Taller intensivo de análisis de datos con Python"
-      }
-    },
-    {
-      id_certificado: 3,
-      id_inscripcion: 3,
-      tipo_certificado: "Participación",
-      fecha_emision: new Date("2023-12-15"),
-      url_certificado: "/certificates/ux-ui-design.pdf",
-      calificacion: 92,
-      asistencia_porcentaje: 90,
-      inscripcion: {
-        id_inscripcion: 3,
-        id_usuario: user.uid_firebase,
-        id_evento: 3,
-        fecha_inscripcion: new Date("2023-10-15"),
-        estado_pago: "Pagado",
-        forma_pago: "Efectivo",
-        comprobante_pago: "PAY-003",
-        estado_inscripcion: "Completado"
-      },
-      evento: {
-        id_evento: 3,
-        nombre: "Diseño UX/UI con Figma",
-        tipo_evento: "Seminario",
-        fecha_inicio: new Date("2023-11-01"),
-        fecha_fin: new Date("2023-12-10"),
-        modalidad: "Híbrido",
-        costo: 120,
-        organizador: 3,
-        carrera_dirigida: "Diseño Gráfico",
-        categoria_area: "Diseño",
-        num_horas: 30,
-        nota_aprobacion: 70,
-        requiere_asistencia: true,
-        requiere_nota: false,
-        url_foto: "/images/figma-course.jpg",
-        id_seccion: 3,
-        visible: true,
-        descripcion: "Seminario completo de diseño de interfaces con Figma"
-      }
+      setLoading(false)
     }
-  ]
+    fetchCertificates()
+  }, [user])
 
   const filteredCertificates = certificatesWithDetails.filter(cert => {
-    const matchesSearch = cert.evento.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cert.evento.categoria_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cert.tipo_certificado.toLowerCase().includes(searchTerm.toLowerCase())
+    const nombre = cert.evento?.nombre || "";
+    const categoria = cert.evento?.categoria_area || "";
+    const tipoCert = cert.tipo_certificado || "";
+    const tipoEvento = cert.evento?.tipo_evento || "";
+    const search = searchTerm || "";
+    const filter = filterBy || "";
+
+    const matchesSearch = nombre.toLowerCase().includes(search.toLowerCase()) ||
+                         categoria.toLowerCase().includes(search.toLowerCase()) ||
+                         tipoCert.toLowerCase().includes(search.toLowerCase())
     
-    const matchesFilter = filterBy === "all" || 
-                         cert.evento.categoria_area.toLowerCase().includes(filterBy.toLowerCase()) ||
-                         cert.evento.tipo_evento.toLowerCase().includes(filterBy.toLowerCase())
+    const matchesFilter = filter === "all" || 
+                         categoria.toLowerCase().includes(filter.toLowerCase()) ||
+                         tipoEvento.toLowerCase().includes(filter.toLowerCase())
     
     return matchesSearch && matchesFilter
   })
@@ -206,7 +127,8 @@ export function Certificates({ user }: CertificatesProps) {
   }
 
   const getCertificateTypeColor = (tipo: string) => {
-    switch (tipo.toLowerCase()) {
+    if (!tipo) return "bg-gray-100 text-gray-800";
+    switch ((tipo || "").toLowerCase()) {
       case "aprobación":
         return "bg-green-100 text-green-800"
       case "participación":
@@ -229,6 +151,26 @@ export function Certificates({ user }: CertificatesProps) {
       default:
         return "📚"
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-lg font-semibold text-red-600 mb-2">Error cargando certificados</h2>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()} className="auth-button">
+          Reintentar
+        </Button>
+      </div>
+    )
   }
 
   return (
