@@ -4,13 +4,25 @@ import Image from "next/image"
 import { SiteLayout } from "@/components/site-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Calendar, MapPin, Users, Search, Filter } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import '../globals.css'
-import * as eventosService from "../Services/eventosService";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Search,
+  Clock,
+  DollarSign,
+  CheckCircle,
+  ArrowLeft,
+  Star,
+  BookOpen,
+} from "lucide-react"
+import { useEffect, useState } from "react"
+import '../../../globals.css'
+import * as sectionsService from "../../../Services/sectionsService";
 import { EventFilters } from "@/components/ui/filters";
-
+import { useParams } from "next/navigation";
 
 function formatFecha(fechaStr: string) {
   if (!fechaStr) return "";
@@ -34,6 +46,12 @@ function formatHora(fechaStr: string) {
 
 export default function EventsPage() {
 
+  const params = useParams();
+  console.log("Todos los params:", params); // 🔍 Ver todos los parámetros
+  console.log("params.id:", params.id); // 🔍 Ver específicamente el id
+  console.log("URL actual:", window.location.pathname); // 🔍 Ver la URL completa
+  const idSeccion = params.id as string;
+  const [seccion, setSeccion] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -118,58 +136,80 @@ export default function EventsPage() {
     },
   ];
 
+
   // Datos de para eventos
   useEffect(() => {
-    async function fetchEventos() {
+    console.log("idSeccion recibido:", idSeccion);
+
+    async function fetchSeccion() {
       try {
-        const data = await eventosService.getEventos();
-        console.log("Eventos recibidos:", data);
-        setEvents(Array.isArray(data) ? data : []);
-
-        //Datos null/undefined mezclados
-        if (Array.isArray(data) && data.length > 0) {
-
-          // Categorías únicas
+        const secciones = await sectionsService.getSecciones();
+        const found = secciones.find(s => s.id_seccion.toString() === idSeccion);
+        
+        if (found) {
+          setSeccion(found);
+          
+          // ✅ Usar fechaEliminacion (no fecha_eliminacion)
+          const eventosDeEstaSeccion = found.eventos.filter(e => e.visible && !e.fechaEliminacion);
+          setEvents(eventosDeEstaSeccion);
+  
+          // Extraer filtros solo de los eventos de esta sección
           const categoriasUnicas = [...new Set(
-            data
+            eventosDeEstaSeccion
               .map(evento => evento.categoria)
               .filter(categoria => categoria && typeof categoria === 'string')
               .map(categoria => categoria.trim().toLowerCase())
           )];
           setCategorias(categoriasUnicas);
-          
-          // Modalidades únicas
+  
           const modalidadesUnicas = [...new Set(
-            data
+            eventosDeEstaSeccion
               .map(evento => evento.modalidad)
               .filter(modalidad => modalidad && typeof modalidad === 'string')
               .map(modalidad => modalidad.trim().toLowerCase())
           )];
           setModalidades(modalidadesUnicas);
-
-          // Tipos de evento únicos 
+  
+          // ✅ Usar tipoEvento (no tipo_evento)
           const tiposEventoUnicos = [...new Set(
-            data
+            eventosDeEstaSeccion
               .map(evento => evento.tipoEvento)
-              .filter(tipo => tipo && typeof tipo === 'string')
-              .map(tipo => tipo.trim())
+              .filter(tipoEvento => tipoEvento && typeof tipoEvento === 'string')
+              .map(tipoEvento => tipoEvento.trim())
           )];
           setTiposEvento(tiposEventoUnicos);
         }
-
       } catch (error) {
+        console.error("Error fetching seccion:", error);
+        setSeccion({ eventos: [] });
         setEvents([]);
-        setCategorias([]);
-        setModalidades([]);
-        setTiposEvento([]);
       } finally {
         setLoading(false);
         setCategoriasLoading(false);
       }
     }
-    fetchEventos();
-  }, []);
+  
+    if (idSeccion && idSeccion !== 'undefined') { 
+      fetchSeccion();
+    }
+  }, [idSeccion]);
+  
+  
 
+  useEffect(() => {
+    // Limpiar filtros al cambiar de sección
+    setCategoriasSeleccionadas([]);
+    setModalidad("");
+    setPrecioSeleccionado({ min: 0, max: null });
+    setPrecioMin("");
+    setPrecioMax("");
+    setFechaInicio("");
+    setFechaFin("");
+    setTiposEventoSeleccionados([]);
+    setSearch("");
+  }, [idSeccion]);
+
+  
   useEffect(() => {
     setPaginaActual(1);
   }, [search, categoriasSeleccionadas, modalidad, precioSeleccionado])
@@ -202,14 +242,17 @@ export default function EventsPage() {
   return (
     <SiteLayout>
       {/* Hero Section */}
-      <section className="py-16 bg-gradient-to-b from-red-50 to-white">
+      <section className="py-12 bg-gradient-to-r from-primary/10 to-primary/5">
         <div className="container px-4 mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-8">
-            <h1 className="text-4xl font-bold mb-4">Eventos</h1>
-            <p className="text-muted-foreground mb-8">
-              Descubre conferencias, workshops y meetups diseñados para impulsar tu carrera profesional y conectar con
-              expertos de la industria.
-            </p>
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" asChild>
+                <Link href="/" className="flex items-center gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Volver a secciones
+                </Link>
+            </Button>
+          </div>  
+          
             {/* ✅ Solo la barra de búsqueda, sin botón de filtros */}
             <div className="flex justify-center">
               <div className="relative w-full max-w-md">
@@ -263,10 +306,7 @@ export default function EventsPage() {
                 <h2 className="text-2xl font-bold mb-6">Todos los eventos</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {eventosPaginados.map((event) => (
-                    <div
-                      key={event.id_evento}
-                      className="bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                    >
+                    <Card key={event.id_evento} className="bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                       <div className="relative h-48">
                         <Image
                           src={event.urlFoto || "/placeholder.svg"}
@@ -300,11 +340,11 @@ export default function EventsPage() {
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-primary">{event.costo ? `$${event.costo}` : "Gratis"}</span>
                           <Button asChild className="auth-button">
-                            <Link href={`/events/${event.id_evento}`}>Ver detalles</Link>
+                            <Link href={`/sections/events_detail/${event.id_evento}`}>Ver detalles</Link>
                           </Button>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   ))}
                 </div>
                 
@@ -328,7 +368,6 @@ export default function EventsPage() {
 
               </div>
             </div>
-          </div>
         </div>
       </section>
 
