@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -26,6 +26,9 @@ import {
   Shield
 } from "lucide-react"
 
+import { getCertificadosByUsuario } from "../../app/Services/certificadoService"
+import { updateUsuario, getUsuarioByFirebaseUid, getDashboardDataUsuario, updateUsuarioPassword } from "../../app/Services/usuarioService"
+
 interface PersonalInfoProps {
   user: User
 }
@@ -42,14 +45,129 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
     carrera: user.carrera || "",
     url_foto: user.url_foto || user.urlUserImg || ""
   })
+  const [accountInfo, setAccountInfo] = useState({
+    memberSince: "-",
+    lastLogin: "-",
+    totalEvents: 0,
+    completedEvents: 0,
+    certificates: 0,
+    attendances: 0
+  })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [passwordFields, setPasswordFields] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
+  const [showPasswordFields, setShowPasswordFields] = useState(false)
+
+  useEffect(() => {
+    async function fetchStats() {
+      setLoading(true)
+      setError(null)
+      try {
+        const uid = user.uid_firebase || user.uid || ""
+        if (!uid) {
+          setLoading(false)
+          return
+        }
+        // Usar el endpoint avanzado para obtener todo
+        const dashboardData = await getDashboardDataUsuario(uid)
+        // Actualizar datos de perfil y estadísticas
+        if (dashboardData && dashboardData.user) {
+          setFormData({
+            nombres: dashboardData.user.nombres || "",
+            apellidos: dashboardData.user.apellidos || "",
+            correo: dashboardData.user.correo || dashboardData.user.email || "",
+            cedula: dashboardData.user.cedula || "",
+            telefono: dashboardData.user.telefono || "",
+            direccion: dashboardData.user.direccion || "",
+            carrera: dashboardData.user.carrera || "",
+            url_foto: dashboardData.user.url_foto || dashboardData.user.urlUserImg || ""
+          })
+        }
+        // Estadísticas
+        const eventos = dashboardData.eventosInscritos || []
+        setAccountInfo({
+          memberSince: "-", // Puedes mapear si el backend lo provee
+          lastLogin: "-",   // Puedes mapear si el backend lo provee
+          totalEvents: eventos.length,
+          completedEvents: eventos.filter((i:any) => i.estado_inscripcion === 'completado').length,
+          certificates: eventos.filter((i:any) => i.estado_inscripcion === 'completado' && i.nota >= 70).length, // Ejemplo
+          attendances: eventos.reduce((sum:any, i:any) => sum + (i.porcentaje_asistencia || 0), 0)
+        })
+      } catch (e: any) {
+        setError(e.message || "Error cargando estadísticas")
+      }
+      setLoading(false)
+    }
+    fetchStats()
+  }, [user])
+
+  const reloadUserData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const uid = user.uid_firebase || user.uid || ""
+      if (!uid) return
+      const backendUser = await getUsuarioByFirebaseUid(uid)
+      setFormData({
+        nombres: backendUser.nombres || "",
+        apellidos: backendUser.apellidos || "",
+        correo: backendUser.correo || backendUser.email || "",
+        cedula: backendUser.cedula || "",
+        telefono: backendUser.telefono || "",
+        direccion: backendUser.direccion || "",
+        carrera: backendUser.carrera || "",
+        url_foto: backendUser.url_foto || backendUser.urlUserImg || ""
+      })
+    } catch (e: any) {
+      setError("No se pudo recargar los datos del usuario")
+    }
+    setLoading(false)
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSave = () => {
-    console.log("Guardando cambios:", formData)
-    setIsEditing(false)
+  const handlePasswordChange = (field: string, value: string) => {
+    setPasswordFields(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const uid = user.uid_firebase || user.uid || ""
+      if (!uid) throw new Error("No se encontró el UID del usuario")
+      // If password fields are shown and filled, validate and update password
+      if (showPasswordFields && (passwordFields.currentPassword || passwordFields.newPassword || passwordFields.confirmPassword)) {
+        if (!passwordFields.currentPassword || !passwordFields.newPassword || !passwordFields.confirmPassword) {
+          throw new Error("Completa todos los campos de contraseña")
+        }
+        if (passwordFields.newPassword !== passwordFields.confirmPassword) {
+          throw new Error("Las contraseñas nuevas no coinciden")
+        }
+        // Call password update service (must exist in usuarioService)
+        await updateUsuarioPassword(uid, passwordFields.currentPassword, passwordFields.newPassword)
+        setSuccess("Contraseña actualizada correctamente.")
+      }
+      // Update user data
+      await updateUsuario(uid, formData)
+      setIsEditing(false)
+      setShowPasswordFields(false)
+      setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      setSuccess("Perfil actualizado correctamente.")
+      await reloadUserData()
+    } catch (e: any) {
+      setError(e.message || "Error guardando cambios")
+    }
+    setSaving(false)
   }
 
   const handleCancel = () => {
@@ -64,15 +182,8 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
       url_foto: user.url_foto || user.urlUserImg || ""
     })
     setIsEditing(false)
-  }
-
-  const accountInfo = {
-    memberSince: "Enero 2024",
-    lastLogin: "10 Febrero 2024",
-    totalEvents: 5,
-    completedEvents: 3,
-    certificates: 2,
-    attendances: 15
+    setShowPasswordFields(false)
+    setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" })
   }
 
   const getUserRole = (rol: string) => {
@@ -95,6 +206,9 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
 
   return (
     <div className="space-y-6">
+      {loading && <div className="p-4 text-center">Cargando información...</div>}
+      {error && <div className="p-4 text-center text-red-600">{error}</div>}
+      {success && <div className="p-4 text-center text-green-600">{success}</div>}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Información Personal</h1>
@@ -109,9 +223,9 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button onClick={handleSave} className="auth-button">
+            <Button onClick={handleSave} className="auth-button" disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
-              Guardar
+              {saving ? "Guardando..." : "Guardar"}
             </Button>
             <Button onClick={handleCancel} variant="outline">
               <X className="h-4 w-4 mr-2" />
@@ -356,9 +470,46 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
                   </Badge>
                 </div>
               </div>
+
+              {isEditing && showPasswordFields && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Contraseña Actual</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordFields.currentPassword}
+                      onChange={e => handlePasswordChange("currentPassword", e.target.value)}
+                      className="auth-input"
+                      autoComplete="current-password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">Nueva Contraseña</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordFields.newPassword}
+                      onChange={e => handlePasswordChange("newPassword", e.target.value)}
+                      className="auth-input"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordFields.confirmPassword}
+                      onChange={e => handlePasswordChange("confirmPassword", e.target.value)}
+                      className="auth-input"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Configuración de Cuenta</CardTitle>
@@ -393,9 +544,15 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
                     Actualiza tu contraseña de acceso
                   </p>
                 </div>
-                <Button variant="outline" size="sm">
-                  Cambiar
-                </Button>
+                {isEditing ? (
+                  <Button variant="outline" size="sm" onClick={() => setShowPasswordFields(v => !v)}>
+                    {showPasswordFields ? "Ocultar" : "Editar"}
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" disabled>
+                    Cambiar
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
