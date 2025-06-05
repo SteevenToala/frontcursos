@@ -1,20 +1,20 @@
-interface Event {
+export interface Event {
   id_evento: number;
   nombre: string;
-  tipo_evento: string;
-  fecha_inicio: Date | string;
-  fecha_fin: Date | string;
+  tipoEvento: string;        // ✅ Cambio: tipo_evento → tipoEvento
+  fechaInicio: Date | string; // ✅ Cambio: fecha_inicio → fechaInicio
+  fechaFin: Date | string;    // ✅ Cambio: fecha_fin → fechaFin
   modalidad: string;
   costo: number;
   categoria: string;
-  numero_horas: number;
-  nota_aprovacion: number;
-  requiere_asistencia: boolean;
-  url_foto: string;
+  numeroHoras: number;        // ✅ Cambio: numero_horas → numeroHoras
+  notaAprovacion: number;     // ✅ Cambio: nota_aprovacion → notaAprovacion
+  requiereAsistencia: boolean; // ✅ Cambio: requiere_asistencia → requiereAsistencia
+  urlFoto: string;            // ✅ Cambio: url_foto → urlFoto
   visible: boolean;
   descripcion: string;
   id_organizador: number;
-  fecha_eliminacion?: Date | string | null;
+  fechaEliminacion?: Date | string | null; // ✅ Cambio: fecha_eliminacion → fechaEliminacion
   id_seccion: number;
 }
 
