@@ -53,7 +53,6 @@ export default function Solicitudes() {
         setNuevoEstado(null);
         setDescripcion("");
     };
-
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <h2 className="text-2xl font-bold text-red-700">Solicitudes Generales</h2>
