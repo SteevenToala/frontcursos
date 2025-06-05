@@ -8,6 +8,7 @@ import Autoridade from './sections/Autoridades';
 import Solicitudes from './sections/Solicitudes';
 import StorageNavegador from '@/app/Services/StorageNavegador';
 import { useRouter } from "next/navigation"
+import Eventos from './sections/Eventos';
 import Reportes from './sections/Reportes';
 import Calificacion from './sections/Calificacion';
 import Inscripciones from './sections/Inscripciones';
@@ -17,10 +18,10 @@ const sectionComponents: { [key: string]: React.ReactNode } = {
   mision_vision: <MisionVision />,
   autoridades: <Autoridade />,
   solicitudes: <Solicitudes />,
+  eventos: <Eventos />
   reportes: <Reportes />,
   calificaciones: <Calificacion />,
   inscripciones: <Inscripciones />
-
 };
 
 export default function SidebarLayout() {
