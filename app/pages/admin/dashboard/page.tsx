@@ -1,48 +1,47 @@
-"use client";
-
+'use client';
+import '@/app/globals.css';
 import { useEffect, useState } from "react";
+import Sidebar from '@/components/ui/Sidebar';
+import StorageNavegador from '@/app/Services/StorageNavegador';
+import { useRouter } from "next/navigation"
+import Inicio from '../sections/Inicio';
+import MisionVision from '../sections/MisionVision';
+import Autoridade from '../sections/Autoridades';
+import Solicitudes from '../sections/Solicitudes';
+import Eventos from '../sections/Eventos';
+import Reportes from '../sections/Reportes';
+import Calificacion from '../sections/Calificacion';
+import Inscripciones from '../sections/Inscripciones';
 
-export default function Page() {
-  const [user, setUser] = useState<any>(null);
+const sectionComponents: { [key: string]: React.ReactNode } = {
+  dashboard: <Inicio />,
+  mision_vision: <MisionVision />,
+  autoridades: <Autoridade />,
+  solicitudes: <Solicitudes />,
+  eventos: <Eventos />,
+  reportes: <Reportes />,
+  calificaciones: <Calificacion />,
+  inscripciones: <Inscripciones />
+};
+
+export default function SidebarLayout() {
+  const router = useRouter()
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setUser(parsed.data ? parsed.data : parsed); // Soporta ambos formatos
-        } catch {
-          setUser(null);
-        }
-      }
+    const user = StorageNavegador.getItemWithExpiry("user");
+    if (!user || user && typeof user === "object" && "rol" in user && (user as any).rol !== "admin") {
+      router.push("/")
     }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    window.location.href = "/pages/login";
-  };
+  }, [router])
+  const [activeSection, setActiveSection] = useState("dashboard");
 
   return (
-    <div>
-      <div>Dashboard Page ADMIN</div>
-      {user ? (
-        <div className="mt-4 p-4 bg-gray-100 rounded">
-          <h2 className="font-bold mb-2">Datos del usuario logueado:</h2>
-          <pre className="text-sm bg-white p-2 rounded border overflow-x-auto">
-            {JSON.stringify(user, null, 2)}
-          </pre>
-          <button
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            onClick={handleLogout}
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      ) : (
-        <div className="mt-4 text-gray-500">No hay usuario logueado.</div>
-      )}
+
+    <div className="flex h-screen bg-[#f8f4ee]">
+      <Sidebar active={activeSection} onSelect={setActiveSection} />
+      <main className="flex-1 p-8 overflow-y-auto">
+        {sectionComponents[activeSection] ?? <p>Sección no encontrada</p>}
+      </main>
     </div>
   );
 }
