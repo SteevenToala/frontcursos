@@ -8,9 +8,11 @@ import {
   Settings,
   AlertCircleIcon,
   LogOut,
+
   TextSelectIcon,
   Edit,
   ClipboardList,
+
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
@@ -36,7 +38,9 @@ const navItems = [
 export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
+
   const user = StorageNavegador.getItemWithExpiry("user") as Users;
+
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -108,3 +112,4 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
     </aside>
   );
 }
+

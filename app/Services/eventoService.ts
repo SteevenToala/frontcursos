@@ -1,3 +1,4 @@
+
 import StorageNavegador from "./StorageNavegador";
 import Users from "../models/User";
 import { Evento } from "../models/CrearEvento";
@@ -58,3 +59,4 @@ export async function calificarEstudiante(data: { nota: number, asistencia: numb
     const dat = res.json();
     return dat;
 }
+

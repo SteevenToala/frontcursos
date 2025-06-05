@@ -2,6 +2,7 @@
 import { useRoleProtection } from "@/app/Services/useRoleProtection";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  useRoleProtection(["admin"], "/pages/login?error=admin-required");
+  // Comentado para testing - evitar redirección al login
+  // useRoleProtection(["admin"], "/pages/login?error=admin-required");
   return <>{children}</>;
 }

@@ -2,6 +2,7 @@
 import { useRoleProtection } from "@/app/Services/useRoleProtection";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  useRoleProtection(["estudiante"], "/pages/login?error=client-required");
+  // Comentado para testing - evitar redirección al login
+  // useRoleProtection(["estudiante"], "/pages/login?error=client-required");
   return <>{children}</>;
 }
