@@ -23,6 +23,7 @@ type SidebarProps = {
 };
 
 const navItems = [
+  { id: "pagina_principal", label: "Ir a la página principal", icon: LayoutDashboard },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "eventos", label: "Eventos", icon: Calendar },
   { id: "Secciones", label: "Seecciones", icon: BookOpen },
@@ -31,8 +32,8 @@ const navItems = [
   { id: "mision_vision", label: "Mision y Vision", icon: Settings },
   { id: "reportes", label: "Reportes", icon: TextSelectIcon },
   { id: "calificaciones", label: "Calificaciones", icon: Edit },
-  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList }
-
+  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList },
+   // Nuevo item
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
@@ -70,11 +71,20 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
           {navItems.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => onSelect(id)}
-              className={`flex items-center gap-3 px-4 py-2 w-full rounded-md text-sm transition ${active === id
-                ? "bg-red-50 text-red-600 font-medium"
-                : "text-gray-700 hover:bg-gray-100"
-                }`}
+              onClick={() => {
+                if (id === 'pagina_principal') {
+                  router.push('/')
+                } else {
+                  onSelect(id)
+                }
+              }}
+              className={`flex items-center gap-3 px-4 py-2 w-full rounded-md text-sm transition
+                ${id === 'pagina_principal'
+                  ? 'bg-gradient-to-r from-primary to-red-500 text-white font-bold shadow-lg border border-primary/60 hover:from-red-500 hover:to-primary'
+                  : active === id
+                    ? 'bg-red-50 text-red-600 font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'}
+              `}
             >
               <Icon size={18} />
               {label}
