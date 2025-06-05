@@ -7,8 +7,8 @@ export interface Evento {
     costo: number;
     categoria: string;
     numeroHoras: string;
-    notaAprovacion: number;
-    requiereAsistencia: boolean;
+    notaAprovacion: number  | null;
+    requiereAsistencia: number | null;
     urlFoto: string;
     visible: boolean;
     descripcion: string;
@@ -27,8 +27,8 @@ export const eventoInicial: Evento = {
     costo: 0,
     categoria: "software",
     numeroHoras: "",
-    notaAprovacion: 0,
-    requiereAsistencia: true,
+    notaAprovacion: null,
+    requiereAsistencia: null,
     urlFoto: "",
     visible: true,
     descripcion: "",

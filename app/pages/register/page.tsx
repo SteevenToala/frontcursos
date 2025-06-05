@@ -58,6 +58,8 @@ export default function RegisterPage() {
   })
 
   const password = form.watch("password")
+  const email = form.watch("email")
+  const isUtaEmail = email.endsWith("@uta.edu.ec")
 
   const onSubmit = async (values: RegisterFormValues) => {
 
@@ -67,9 +69,9 @@ export default function RegisterPage() {
 
     try {
       // Registrar usuario en Firebase y se almacenan sus credenciales en el localstorage
-      await FirebaseService.registerWithEmailAndPassword(values.email, values.password, values.firstName)
-      
-      const user = StorageNavegador.getItemWithExpiry("user") as User;
+      await FirebaseService.registerWithEmailAndPassword(values.email, values.password, values.firstName,null)
+
+      const user = StorageNavegador.getItemWithExpiry("user") as Users;
       // Subir imagen a Firebase Storage si existe
       let profileImageUrl = ""
       if (file && user?.uid) {
@@ -84,7 +86,7 @@ export default function RegisterPage() {
         telefono: values.telefono,
         direccion: values.direccion,
         rol: "estudiante",
-        carrera: selectedCarrera,
+        carrera: selectedCarrera === "" ? null : selectedCarrera,
         estado: "activo",
         url_foto: profileImageUrl,
       })
@@ -201,7 +203,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                {isUtaEmail && (<div className="space-y-2">
                   <Label htmlFor="interestArea">Carrera a la que perteneces</Label>
                   <Select value={selectedCarrera} onValueChange={setSelectedCarrera} disabled={isPending}>
                     <SelectTrigger className="auth-input">
@@ -216,6 +218,7 @@ export default function RegisterPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Contraseña</Label>
