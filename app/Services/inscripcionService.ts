@@ -30,11 +30,10 @@ export async function getInscripciones() {
   }
 }
 
-export async function getInscripcionesByUsuario(uid_firebase: string) {
+/*export async function getInscripcionesByUsuario(uid_firebase: string) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
-    
     const response = await fetch(`${API_URL}/usuario/${uid_firebase}`, {
       method: 'GET',
       headers: {
@@ -42,17 +41,19 @@ export async function getInscripcionesByUsuario(uid_firebase: string) {
         "Authorization": `Bearer ${token}`
       },
     });
-
+    if (response.status === 404) {
+      // Si no hay inscripciones, devuelve array vacío en vez de error
+      return [];
+    }
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Error obteniendo inscripciones del usuario');
     }
-
     return await response.json();
   } catch (error) {
     throw error;
   }
-}
+}*/
 
 export async function getInscripcionById(id: number) {
   try {
