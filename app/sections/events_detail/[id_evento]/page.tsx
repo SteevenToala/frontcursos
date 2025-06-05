@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator"
 import '../../../globals.css'
+import StorageNavegador from "@/app/Services/StorageNavegador";
 
 function formatFecha(fechaStr: string) {
   if (!fechaStr) return "";
@@ -44,6 +45,9 @@ export default function DetalleEventoPage() {
   const { id_evento } = useParams();
   const [evento, setEvento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchEvento() {
@@ -59,6 +63,20 @@ export default function DetalleEventoPage() {
       }
     }
     fetchEvento();
+
+    // Detecta el rol del usuario desde localStorage
+    const user = StorageNavegador.getItemWithExpiry("user");
+    let parsed = null;
+    if (user && typeof user === 'string') {
+      try {
+        parsed = JSON.parse(user);
+      } catch {
+        parsed = null;
+      }
+    } else if (user && typeof user === 'object') {
+      parsed = user;
+    }
+    setUserRole(parsed && parsed.rol ? parsed.rol : null);
   }, [id_evento]);
 
   if (loading) {
@@ -75,6 +93,30 @@ export default function DetalleEventoPage() {
   const asistentes = evento.asistentes || 0;
   const maxAsistentes = evento.max_asistentes || 100;
   const discountPercentage = evento.descuento || 0;
+
+  function handleInscribirse() {
+    const user = StorageNavegador.getItemWithExpiry("user");
+    let parsed = null;
+    if (user && typeof user === 'string') {
+      try {
+        parsed = JSON.parse(user);
+      } catch {
+        parsed = null;
+      }
+    } else if (user && typeof user === 'object') {
+      parsed = user;
+    }
+    if (!parsed) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (parsed.rol === 'admin') {
+      setShowAdminModal(true);
+      return;
+    }
+    // Aquí va la lógica real de inscripción (servicio backend)
+    alert("¡Inscripción exitosa! (simulada)");
+  }
 
   return (
     <SiteLayout>
@@ -234,7 +276,7 @@ export default function DetalleEventoPage() {
                   <p className="text-sm text-muted-foreground mb-6">
                     {evento.costo === 0 ? "Evento gratuito" : "Precio por persona"}
                   </p>
-                  <Button className="w-full" size="lg">
+                  <Button className="w-full" size="lg" onClick={handleInscribirse}>
                     Inscribirse ahora
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">Confirma tu participación</p>
@@ -245,6 +287,45 @@ export default function DetalleEventoPage() {
           </div>
         </div>
       </div>
+      {/* Modal de login requerido */}
+      {showLoginModal && (
+        <div style={{position:'fixed',inset:0,zIndex:2147483647,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'auto'}}>
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full border border-primary/20 animate-fade-in">
+            <div className="flex flex-col items-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mb-4 animate-bounce" />
+              <h2 className="text-2xl font-bold mb-2 text-primary">No has iniciado sesión</h2>
+              <p className="mb-6 text-gray-700 text-center">
+                Debes iniciar sesión para poder inscribirte en este evento.<br/>
+                Haz clic en "Ir a iniciar sesión" para acceder o en "Cancelar" para volver.
+              </p>
+              <div className="flex gap-3 w-full justify-center">
+                <Button onClick={() => setShowLoginModal(false)} variant="outline" className="w-1/2">Cancelar</Button>
+                <Link href="/pages/login" className="w-1/2">
+                  <Button className="w-full" variant="default">Ir a iniciar sesión</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal para administradores */}
+      {showAdminModal && (
+        <div style={{position:'fixed',inset:0,zIndex:2147483647,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'auto'}}>
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full border border-primary/20 animate-fade-in">
+            <div className="flex flex-col items-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mb-4 animate-bounce" />
+              <h2 className="text-2xl font-bold mb-2 text-primary">Acción no permitida</h2>
+              <p className="mb-6 text-gray-700 text-center">
+                Los administradores no pueden inscribirse a eventos.<br/>
+                Si necesitas participar, utiliza una cuenta de estudiante.
+              </p>
+              <div className="flex gap-3 w-full justify-center">
+                <Button onClick={() => setShowAdminModal(false)} variant="default" className="w-full">Cerrar</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </SiteLayout>
   );
 }
