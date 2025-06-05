@@ -2,6 +2,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as sectionsService from "../../../Services/sectionsService";
+import * as inscripcionService from "@/app/Services/inscripcionService";
 import { SiteLayout } from "@/components/site-layout";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,6 +13,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator"
 import '../../../globals.css'
 import StorageNavegador from "@/app/Services/StorageNavegador";
+import { LoginRequiredModal, AdminNotAllowedModal, RegistrationSuccessModal, RegistrationErrorModal } from "@/components/EventModals";
 
 function formatFecha(fechaStr: string) {
   if (!fechaStr) return "";
@@ -48,6 +50,9 @@ export default function DetalleEventoPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function fetchEvento() {
@@ -114,8 +119,22 @@ export default function DetalleEventoPage() {
       setShowAdminModal(true);
       return;
     }
-    // Aquí va la lógica real de inscripción (servicio backend)
-    alert("¡Inscripción exitosa! (simulada)");
+    // Lógica real de inscripción para estudiantes
+    inscripcionService.createInscripcion({
+      id_usuario: parsed.uid_firebase,
+      id_evento: evento.id_evento,
+      estado_pago: 'pendiente',
+      forma_pago: '',
+      comprobante_pago: '',
+      estado_inscripcion: 'Pendiente',
+    })
+      .then(() => {
+        setShowSuccessModal(true);
+      })
+      .catch((err) => {
+        setErrorMessage("Error al inscribirse: " + (err.message || err));
+        setShowErrorModal(true);
+      });
   }
 
   return (
@@ -288,44 +307,13 @@ export default function DetalleEventoPage() {
         </div>
       </div>
       {/* Modal de login requerido */}
-      {showLoginModal && (
-        <div style={{position:'fixed',inset:0,zIndex:2147483647,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'auto'}}>
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full border border-primary/20 animate-fade-in">
-            <div className="flex flex-col items-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mb-4 animate-bounce" />
-              <h2 className="text-2xl font-bold mb-2 text-primary">No has iniciado sesión</h2>
-              <p className="mb-6 text-gray-700 text-center">
-                Debes iniciar sesión para poder inscribirte en este evento.<br/>
-                Haz clic en "Ir a iniciar sesión" para acceder o en "Cancelar" para volver.
-              </p>
-              <div className="flex gap-3 w-full justify-center">
-                <Button onClick={() => setShowLoginModal(false)} variant="outline" className="w-1/2">Cancelar</Button>
-                <Link href="/pages/login" className="w-1/2">
-                  <Button className="w-full" variant="default">Ir a iniciar sesión</Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <LoginRequiredModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
       {/* Modal para administradores */}
-      {showAdminModal && (
-        <div style={{position:'fixed',inset:0,zIndex:2147483647,width:'100vw',height:'100vh',background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'auto'}}>
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full border border-primary/20 animate-fade-in">
-            <div className="flex flex-col items-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mb-4 animate-bounce" />
-              <h2 className="text-2xl font-bold mb-2 text-primary">Acción no permitida</h2>
-              <p className="mb-6 text-gray-700 text-center">
-                Los administradores no pueden inscribirse a eventos.<br/>
-                Si necesitas participar, utiliza una cuenta de estudiante.
-              </p>
-              <div className="flex gap-3 w-full justify-center">
-                <Button onClick={() => setShowAdminModal(false)} variant="default" className="w-full">Cerrar</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AdminNotAllowedModal open={showAdminModal} onClose={() => setShowAdminModal(false)} />
+      {/* Modal de inscripción exitosa */}
+      <RegistrationSuccessModal open={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+      {/* Modal de error de inscripción */}
+      <RegistrationErrorModal open={showErrorModal} onClose={() => setShowErrorModal(false)} errorMessage={errorMessage} />
     </SiteLayout>
   );
 }
