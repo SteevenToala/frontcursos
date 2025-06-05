@@ -2,16 +2,16 @@
 import '@/app/globals.css';
 import { useEffect, useState } from "react";
 import Sidebar from '@/components/ui/Sidebar';
-import Inicio from './sections/Inicio';
-import MisionVision from './sections/MisionVision';
-import Autoridade from './sections/Autoridades';
-import Solicitudes from './sections/Solicitudes';
 import StorageNavegador from '@/app/Services/StorageNavegador';
 import { useRouter } from "next/navigation"
-import Eventos from './sections/Eventos';
-import Reportes from './sections/Reportes';
-import Calificacion from './sections/Calificacion';
-import Inscripciones from './sections/Inscripciones';
+import Inicio from '../sections/Inicio';
+import MisionVision from '../sections/MisionVision';
+import Autoridade from '../sections/Autoridades';
+import Solicitudes from '../sections/Solicitudes';
+import Eventos from '../sections/Eventos';
+import Reportes from '../sections/Reportes';
+import Calificacion from '../sections/Calificacion';
+import Inscripciones from '../sections/Inscripciones';
 
 const sectionComponents: { [key: string]: React.ReactNode } = {
   dashboard: <Inicio />,

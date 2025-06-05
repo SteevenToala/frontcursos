@@ -62,7 +62,7 @@ export function SiteHeader() {
               </Button>
             ) : userType === 'admin' ? (
               <Button asChild className="auth-button">
-                <Link href="/pages/admin">Panel Admin</Link>
+                <Link href="/pages/admin/dashboard">Panel Admin</Link>
               </Button>
             ) : null}
           </div>
