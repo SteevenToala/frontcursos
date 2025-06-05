@@ -29,7 +29,7 @@ export default function LoginPage() {
       if (user && typeof user === "object" && "rol" in user && (user as any).rol !== "admin") {
         router.push("/pages/client/dashboard")
       } else {
-        router.push("/pages/admin/dashboard")
+        router.push("/pages/admin")
       }
     }
   })
