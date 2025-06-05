@@ -8,12 +8,13 @@ import { DashboardMain } from "../../../../components/dashboard/dashboard-main"
 import { EnrolledEvents } from "../../../../components/dashboard/enrolled-events"
 import { PersonalInfo } from "../../../../components/dashboard/personal-info"
 import { Certificates } from "../../../../components/dashboard/certificates"
+import User from "../../../models/User"
 import '../../../globals.css'
 
 export default function DashboardPage() {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState("dashboard")
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
 
@@ -24,7 +25,7 @@ export default function DashboardPage() {
       if (stored) {
         try {
           const parsed = JSON.parse(stored)
-          setUser(parsed.data ? parsed.data : parsed) // Soporta ambos formatos
+          setUser(parsed.data ? parsed.data : parsed)
         } catch {
           setUser(null)
         }
@@ -62,9 +63,8 @@ export default function DashboardPage() {
   //   return null
   // }
   const renderContent = () => {
-    // Verificación de seguridad para TypeScript
     if (!user) return null;
-      switch (activeSection) {
+    switch (activeSection) {
       case "dashboard":
         return <DashboardMain user={user} />
       case "events":
