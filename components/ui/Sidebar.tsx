@@ -2,6 +2,7 @@ import Users from "@/app/models/User";
 import StorageNavegador from "@/app/Services/StorageNavegador";
 import {
   LayoutDashboard,
+  UserPlus,
   Calendar,
   BookOpen,
   User,
@@ -25,6 +26,7 @@ type SidebarProps = {
 const navItems = [
   { id: "pagina_principal", label: "Ir a la página principal", icon: LayoutDashboard },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus },
   { id: "eventos", label: "Eventos", icon: Calendar },
   { id: "Secciones", label: "Seecciones", icon: BookOpen },
   { id: "autoridades", label: "Autoridades", icon: User },
