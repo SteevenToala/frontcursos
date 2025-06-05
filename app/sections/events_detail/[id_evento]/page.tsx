@@ -2,6 +2,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as sectionsService from "../../../Services/sectionsService";
+import * as inscripcionService from "@/app/Services/inscripcionService";
 import { SiteLayout } from "@/components/site-layout";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator"
 import '../../../globals.css'
+import StorageNavegador from "@/app/Services/StorageNavegador";
+import { LoginRequiredModal, AdminNotAllowedModal, RegistrationSuccessModal, RegistrationErrorModal } from "@/components/EventModals";
 
 function formatFecha(fechaStr: string) {
   if (!fechaStr) return "";
@@ -44,6 +47,12 @@ export default function DetalleEventoPage() {
   const { id_evento } = useParams();
   const [evento, setEvento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function fetchEvento() {
@@ -59,6 +68,20 @@ export default function DetalleEventoPage() {
       }
     }
     fetchEvento();
+
+    // Detecta el rol del usuario desde localStorage
+    const user = StorageNavegador.getItemWithExpiry("user");
+    let parsed = null;
+    if (user && typeof user === 'string') {
+      try {
+        parsed = JSON.parse(user);
+      } catch {
+        parsed = null;
+      }
+    } else if (user && typeof user === 'object') {
+      parsed = user;
+    }
+    setUserRole(parsed && parsed.rol ? parsed.rol : null);
   }, [id_evento]);
 
   if (loading) {
@@ -75,6 +98,44 @@ export default function DetalleEventoPage() {
   const asistentes = evento.asistentes || 0;
   const maxAsistentes = evento.max_asistentes || 100;
   const discountPercentage = evento.descuento || 0;
+
+  function handleInscribirse() {
+    const user = StorageNavegador.getItemWithExpiry("user");
+    let parsed = null;
+    if (user && typeof user === 'string') {
+      try {
+        parsed = JSON.parse(user);
+      } catch {
+        parsed = null;
+      }
+    } else if (user && typeof user === 'object') {
+      parsed = user;
+    }
+    if (!parsed) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (parsed.rol === 'admin') {
+      setShowAdminModal(true);
+      return;
+    }
+    // Lógica real de inscripción para estudiantes
+    inscripcionService.createInscripcion({
+      id_usuario: parsed.uid_firebase,
+      id_evento: evento.id_evento,
+      estado_pago: 'pendiente',
+      forma_pago: '',
+      comprobante_pago: '',
+      estado_inscripcion: 'Pendiente',
+    })
+      .then(() => {
+        setShowSuccessModal(true);
+      })
+      .catch((err) => {
+        setErrorMessage("Error al inscribirse: " + (err.message || err));
+        setShowErrorModal(true);
+      });
+  }
 
   return (
     <SiteLayout>
@@ -234,7 +295,7 @@ export default function DetalleEventoPage() {
                   <p className="text-sm text-muted-foreground mb-6">
                     {evento.costo === 0 ? "Evento gratuito" : "Precio por persona"}
                   </p>
-                  <Button className="w-full" size="lg">
+                  <Button className="w-full" size="lg" onClick={handleInscribirse}>
                     Inscribirse ahora
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">Confirma tu participación</p>
@@ -245,6 +306,14 @@ export default function DetalleEventoPage() {
           </div>
         </div>
       </div>
+      {/* Modal de login requerido */}
+      <LoginRequiredModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
+      {/* Modal para administradores */}
+      <AdminNotAllowedModal open={showAdminModal} onClose={() => setShowAdminModal(false)} />
+      {/* Modal de inscripción exitosa */}
+      <RegistrationSuccessModal open={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+      {/* Modal de error de inscripción */}
+      <RegistrationErrorModal open={showErrorModal} onClose={() => setShowErrorModal(false)} errorMessage={errorMessage} />
     </SiteLayout>
   );
 }
