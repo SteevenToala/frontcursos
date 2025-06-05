@@ -10,7 +10,6 @@ import { Menu, X } from "lucide-react"
 const navItems = [
   { name: "Inicio", href: "/" },
   { name: "Eventos", href: "/sections" },
-
 ]
 
 export function MainNav() {
