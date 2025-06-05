@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { getDashboardDataUsuario } from "../../app/Services/usuarioService"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -10,7 +11,7 @@ import {
   SelectValue 
 } from "../ui/select"
 import User from "../../app/models/User"
-import { formatDate } from "../../lib/date-utils"
+import { formatDate, safeFormatDate } from "../../lib/date-utils"
 import { 
   Calendar, 
   Filter, 
@@ -35,105 +36,45 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [sortBy, setSortBy] = useState("recent")
+  const [eventosInscritos, setEventosInscritos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Datos de eventos inscritos basados en el esquema de BD
-  const eventosInscritos = [
-    {
-      id_inscripcion: 1,
-      id_evento: 1,
-      evento: {
-        id_evento: 1,
-        nombre: "Desarrollo Web con React",
-        tipo_evento: "Curso",
-        fecha_inicio: new Date("2024-01-15"),
-        fecha_fin: new Date("2024-02-15"),
-        modalidad: "Virtual",
-        num_horas: 40,
-        costo: 150,
-        organizador: "Ana García",
-        categoria_area: "Desarrollo",
-        descripcion: "Aprende React desde cero hasta nivel avanzado",
-        url_foto: "/placeholder.svg"
-      },
-      fecha_inscripcion: new Date("2024-01-10"),
-      estado_pago: "pagado",
-      forma_pago: "tarjeta",
-      estado_inscripcion: "activo",
-      progreso: 75,
-      asistencias: 15,
-      nota_final: 85
-    },
-    {
-      id_inscripcion: 2,
-      id_evento: 2,
-      evento: {
-        id_evento: 2,
-        nombre: "JavaScript Moderno ES6+",
-        tipo_evento: "Taller",
-        fecha_inicio: new Date("2024-02-01"),
-        fecha_fin: new Date("2024-02-28"),
-        modalidad: "Presencial",
-        num_horas: 20,
-        costo: 80,
-        organizador: "Carlos López",
-        categoria_area: "Programación",
-        descripcion: "Domina las características modernas de JavaScript",
-        url_foto: "/placeholder.svg"
-      },
-      fecha_inscripcion: new Date("2024-01-25"),
-      estado_pago: "pagado",
-      forma_pago: "efectivo",
-      estado_inscripcion: "completado",
-      progreso: 100,
-      asistencias: 20,
-      nota_final: 92
-    },
-    {
-      id_inscripcion: 3,
-      id_evento: 3,
-      evento: {
-        id_evento: 3,
-        nombre: "Diseño UX/UI Avanzado",
-        tipo_evento: "Diplomado",
-        fecha_inicio: new Date("2024-03-01"),
-        fecha_fin: new Date("2024-04-30"),
-        modalidad: "Híbrido",
-        num_horas: 60,
-        costo: 300,
-        organizador: "María Rodríguez",
-        categoria_area: "Diseño",
-        descripcion: "Especialízate en diseño de experiencia de usuario",
-        url_foto: "/placeholder.svg"
-      },
-      fecha_inscripcion: new Date("2024-02-20"),
-      estado_pago: "pendiente",
-      forma_pago: "",
-      estado_inscripcion: "pendiente_pago",
-      progreso: 0,
-      asistencias: 0,
-      nota_final: 0
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true)
+      const uid = user.uid_firebase || user.uid
+      if (!uid) {
+        setLoading(false)
+        return
+      }
+      try {
+        const dashboardData = await getDashboardDataUsuario(uid)
+        setEventosInscritos(dashboardData.eventosInscritos || [])
+      } catch (e) {
+        setEventosInscritos([])
+      }
+      setLoading(false)
     }
-  ]
+    fetchData()
+  }, [user])
 
   const filteredEvents = eventosInscritos.filter(inscripcion => {
     const evento = inscripcion.evento
     const matchesSearch = evento.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         evento.organizador.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         evento.categoria_area.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesFilter = filterStatus === "all" || inscripcion.estado_inscripcion === filterStatus
+                         (evento.categoria || '').toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesFilter = filterStatus === "all" || inscripcion.estadoInscripcion === filterStatus
     return matchesSearch && matchesFilter
   })
 
   const sortedEvents = [...filteredEvents].sort((a, b) => {
     switch (sortBy) {
       case "progress":
-        return b.progreso - a.progreso
+        return (b.progreso || 0) - (a.progreso || 0)
       case "name":
         return a.evento.nombre.localeCompare(b.evento.nombre)
       case "recent":
       default:
-        return new Date(b.fecha_inscripcion).getTime() - new Date(a.fecha_inscripcion).getTime()
+        return new Date(b.fechaInscripcion).getTime() - new Date(a.fechaInscripcion).getTime()
     }
   })
 
@@ -175,6 +116,8 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
         )
     }
   }
+
+  if (loading) return <div className="p-8">Cargando eventos...</div>
 
   return (
     <div className="space-y-6">
@@ -250,10 +193,13 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Imagen del evento */}
-                  <div className="w-full lg:w-48 h-32 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-12 w-12 text-primary" />
+                  <div className="w-full lg:w-48 h-32 rounded-lg overflow-hidden flex items-center justify-center border border-primary/20 bg-white shadow-sm">
+                    {inscripcion.evento.url_foto ? (
+                      <img src={inscripcion.evento.url_foto} alt={inscripcion.evento.nombre} className="object-cover w-full h-full" loading="lazy" />
+                    ) : (
+                      <Calendar className="h-12 w-12 text-primary" />
+                    )}
                   </div>
-                  
                   {/* Información del evento */}
                   <div className="flex-1 space-y-4">
                     <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
@@ -263,10 +209,10 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
                           {getStatusBadge(inscripcion.estado_inscripcion)}
                         </div>
                         <p className="text-muted-foreground">{inscripcion.evento.descripcion}</p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                           <span className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
-                            {inscripcion.evento.organizador}
+                            {inscripcion.organizador}
                           </span>
                           <span className="flex items-center gap-1">
                             <MapPin className="h-4 w-4" />
@@ -276,53 +222,53 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
                             <Clock className="h-4 w-4" />
                             {inscripcion.evento.num_horas} horas
                           </span>
+                          <span className="flex items-center gap-1">
+                            <Star className="h-4 w-4" />
+                            {inscripcion.evento.categoria_area}
+                          </span>
                         </div>
                       </div>
-                      
                       <div className="text-right space-y-2">
                         <p className="text-sm text-muted-foreground">
-                          Inscrito el {formatDate(inscripcion.fecha_inscripcion)}
+                          Inscrito el {safeFormatDate(inscripcion.fecha_inscripcion)}
                         </p>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            inscripcion.estado_pago === 'pagado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {inscripcion.estado_pago === 'pagado' ? 'Pagado' : 'Pendiente'}
-                          </span>
-                          {inscripcion.estado_pago === 'pagado' && (
-                            <span className="text-xs text-muted-foreground">
-                              via {inscripcion.forma_pago}
+                        {/* Estado de pago dinámico */}
+                        {inscripcion.estado_pago && (
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              inscripcion.estado_pago === 'pagado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {inscripcion.estado_pago === 'pagado' ? 'Pagado' : 'Pendiente'}
                             </span>
-                          )}
-                        </div>
+                            {inscripcion.estado_pago === 'pagado' && inscripcion.forma_pago && (
+                              <span className="text-xs text-muted-foreground">
+                                via {inscripcion.forma_pago}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
-
                     {/* Progreso y estadísticas */}
                     {inscripcion.estado_inscripcion !== 'pendiente_pago' && (
                       <div className="space-y-3">
+                        {/* Barra de asistencia */}
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Progreso del evento</span>
-                          <span className="font-medium">{inscripcion.progreso}%</span>
+                          <span className="text-muted-foreground">Asistencia</span>
+                          <span className="font-medium">{inscripcion.porcentaje_asistencia || 0}%</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
                           <div 
-                            className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(inscripcion.progreso)}`}
-                            style={{ width: `${inscripcion.progreso}%` }}
+                            className="h-2 rounded-full transition-all duration-300 bg-green-500"
+                            style={{ width: `${inscripcion.porcentaje_asistencia || 0}%` }}
                           />
                         </div>
-                        
+                        {/* Nota final */}
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground">Nota:</span>
+                          <span className="font-semibold text-blue-700">{inscripcion.nota !== undefined ? inscripcion.nota : '-'}</span>
+                        </div>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                          <div className="text-center">
-                            <p className="font-medium text-foreground">{inscripcion.asistencias}</p>
-                            <p className="text-muted-foreground">Asistencias</p>
-                          </div>
-                          {inscripcion.nota_final > 0 && (
-                            <div className="text-center">
-                              <p className="font-medium text-foreground">{inscripcion.nota_final}</p>
-                              <p className="text-muted-foreground">Nota Final</p>
-                            </div>
-                          )}
                           <div className="text-center">
                             <p className="font-medium text-foreground">${inscripcion.evento.costo}</p>
                             <p className="text-muted-foreground">Costo</p>
@@ -334,7 +280,6 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
                         </div>
                       </div>
                     )}
-
                     {/* Acciones */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border">
                       {inscripcion.estado_inscripcion === 'pendiente_pago' ? (
@@ -355,10 +300,7 @@ export function EnrolledEvents({ user }: EnrolledEventsProps) {
                         </>
                       ) : (
                         <>
-                          <Button className="auth-button">
-                            <Play className="h-4 w-4 mr-2" />
-                            Continuar Evento
-                          </Button>
+                          
                           <Button variant="outline">
                             <FileText className="h-4 w-4 mr-2" />
                             Ver Detalles
