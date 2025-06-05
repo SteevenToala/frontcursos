@@ -1,4 +1,4 @@
-import UserType from "@/app/models/User";
+import Users from "@/app/models/User";
 import StorageNavegador from "@/app/Services/StorageNavegador";
 import {
   LayoutDashboard,
@@ -8,6 +8,11 @@ import {
   Settings,
   AlertCircleIcon,
   LogOut,
+
+  TextSelectIcon,
+  Edit,
+  ClipboardList,
+
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
@@ -24,12 +29,18 @@ const navItems = [
   { id: "autoridades", label: "Autoridades", icon: User },
   { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon },
   { id: "mision_vision", label: "Mision y Vision", icon: Settings },
+  { id: "reportes", label: "Reportes", icon: TextSelectIcon },
+  { id: "calificaciones", label: "Calificaciones", icon: Edit },
+  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList }
+
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
-  const user = StorageNavegador.getItemWithExpiry("user") as User;
+
+  const user = StorageNavegador.getItemWithExpiry("user") as Users;
+
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -101,4 +112,4 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
     </aside>
   );
 }
-export { navItems, Sidebar };
+

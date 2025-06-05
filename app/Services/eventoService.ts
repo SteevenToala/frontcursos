@@ -1,154 +1,62 @@
-// services/eventoService.ts
 
-import Evento from "../models/Evento";
-import Inscripcion from "../models/Inscripcion";
-import Users from "../models/User";
 import StorageNavegador from "./StorageNavegador";
+import Users from "../models/User";
+import { Evento } from "../models/CrearEvento";
 
 const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/evento`;
 
-export async function getEventos() {
-  try {
+
+/**
+ * Crear evento
+ */
+export async function crearEvento(data: Evento) {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token = user?.token;
-    
-    const response = await fetch(API_URL, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`
-      },
+    const res = await fetch(`${API_URL}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error obteniendo eventos');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+    if (!res.ok) throw new Error('Error al obtener datos dashboard');
+    const dat = res.json();
+    return dat;
 }
 
-export async function getEventoById(id: number) {
-  try {
+/**
+ * metodo para aceptar o rechazar la solicitud de inscripcion de un estudiante 
+ */
+export async function actualizarEstadoInscripcion(id: number, data: { estado: string }) {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token = user?.token;
-    
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`
-      },
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/inscripcion/aprobar/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error obteniendo evento');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+    if (!res.ok) throw new Error('Error al obtener datos dashboard');
+    const dat = res.json();
+    return dat;
 }
 
-export async function getEventosUsuario(uid_firebase: string) {
-  try {
+/**
+ * metodo para calificar poner calificacion y asistencia al estudiante 
+ */
+export async function calificarEstudiante(data: { nota: number, asistencia: number, idInscripcion: number }) {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token = user?.token;
-    
-    const response = await fetch(`${API_URL}/usuario/${uid_firebase}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`
-      },
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/asistencia`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify(data)
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error obteniendo eventos del usuario');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+    if (!res.ok) throw new Error('Error al obtener datos dashboard');
+    const dat = res.json();
+    return dat;
 }
 
-export async function createEvento(eventoData: Partial<Evento>) {
-  try {
-    const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token = user?.token;
-    
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(eventoData),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error creando evento');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function updateEvento(id: number, eventoData: Partial<Evento>) {
-  try {
-    const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token = user?.token;
-    
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify(eventoData),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error actualizando evento');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
-}
-
-export async function deleteEvento(id: number) {
-  try {
-    const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token = user?.token;
-    
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        "Authorization": `Bearer ${token}`
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error eliminando evento');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
-}

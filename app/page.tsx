@@ -79,13 +79,6 @@ export default function Home() {
               <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
                 Eventos y cursos de calidad
               </span>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
-                Aprende y <span className="text-primary">conecta</span> con los mejores
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8 max-w-lg">
-                Descubre eventos y cursos diseñados para impulsar tu carrera profesional. Aprende nuevas habilidades y
-                conecta con expertos de la industria.
-              </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="auth-button">
                   <Link href="/events">Explorar eventos</Link>

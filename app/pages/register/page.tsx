@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import type { z } from "zod"
-import { getAuth } from "firebase/auth"
-
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -23,7 +21,10 @@ import FirebaseService from "@/app/Services/firebase/FirebaseService"
 
 import '@/app/globals.css'
 import StorageNavegador from "@/app/Services/StorageNavegador"
-import User from "@/app/models/User"
+
+import Users from "@/app/models/User"
+import { getCarreras } from "@/app/Services/carreraService"
+
 
 type RegisterFormValues = z.infer<typeof registerSchema>
 
@@ -34,10 +35,12 @@ export default function RegisterPage() {
   const [isPending, setIsPending] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [interestArea, setInterestArea] = useState("")
+  const [selectedCarrera, setSelectedCarrera] = useState("");
 
   // Estado para manejar la imagen de perfil
   const [file, setFile] = useState<File | null>(null);
+  type Carrera = { id: string; nombre: string };
+  const [carreras, setCarreras] = useState<Carrera[]>([]);
 
 
   const form = useForm<RegisterFormValues>({
@@ -55,12 +58,13 @@ export default function RegisterPage() {
   })
 
   const password = form.watch("password")
-  
+
   const onSubmit = async (values: RegisterFormValues) => {
+
     setError("")
     setSuccess("")
     setIsPending(true)
-    
+
     try {
       // Registrar usuario en Firebase y se almacenan sus credenciales en el localstorage
       await FirebaseService.registerWithEmailAndPassword(values.email, values.password, values.firstName)
@@ -80,7 +84,7 @@ export default function RegisterPage() {
         telefono: values.telefono,
         direccion: values.direccion,
         rol: "estudiante",
-        carrera: interestArea,
+        carrera: selectedCarrera,
         estado: "activo",
         url_foto: profileImageUrl,
       })
@@ -88,7 +92,7 @@ export default function RegisterPage() {
       setSuccess("Tu cuenta ha sido creada correctamente")
       setTimeout(() => {
         router.push("/pages/login")
-      }, 1500)
+      })
     } catch (error: any) {
       setError(error.message || "Error al registrar el usuario")
     } finally {
@@ -100,16 +104,21 @@ export default function RegisterPage() {
     setFile(file);
   }
 
-  // Helper function to convert File to base64 string
-  async function toBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  }
+  const getCarrerasHandler = async () => {
+    setIsPending(true);
+    try {
+      const data = await getCarreras();
+      setCarreras(data);
+    } catch (error) {
+      console.error('Error al obtener las carreras:', error);
+    } finally {
+      setIsPending(false);
+    }
+  };
 
+  useEffect(() => {
+    getCarrerasHandler();
+  }, []);
   return (
     <SiteLayout>
       <div className="py-16 bg-gradient-to-b from-red-50 to-white">
@@ -193,18 +202,17 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="interestArea">Área de interés</Label>
-                  <Select value={interestArea} onValueChange={setInterestArea} disabled={isPending}>
+                  <Label htmlFor="interestArea">Carrera a la que perteneces</Label>
+                  <Select value={selectedCarrera} onValueChange={setSelectedCarrera} disabled={isPending}>
                     <SelectTrigger className="auth-input">
                       <SelectValue placeholder="Selecciona un área" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Ingeniería en Sistemas">Desarrollo de software</SelectItem>
-                      <SelectItem value="Diseño Gráfico">Diseño UX/UI</SelectItem>
-                      <SelectItem value="Marketing">Marketing digital</SelectItem>
-                      <SelectItem value="Negocios">Negocios y emprendimiento</SelectItem>
-                      <SelectItem value="Ciencia de Datos">Ciencia de datos</SelectItem>
-                      <SelectItem value="General">Otro</SelectItem>
+                      {carreras.map((carrera) => (
+                        <SelectItem key={carrera.id} value={carrera.nombre}>
+                          {carrera.nombre}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
