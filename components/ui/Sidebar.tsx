@@ -31,7 +31,8 @@ const navItems = [
   { id: "mision_vision", label: "Mision y Vision", icon: Settings },
   { id: "reportes", label: "Reportes", icon: TextSelectIcon },
   { id: "calificaciones", label: "Calificaciones", icon: Edit },
-  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList }
+  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList },
+  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User }
 
 ];
 
