@@ -18,7 +18,7 @@ const sectionComponents: { [key: string]: React.ReactNode } = {
   mision_vision: <MisionVision />,
   autoridades: <Autoridade />,
   solicitudes: <Solicitudes />,
-  eventos: <Eventos />
+  eventos: <Eventos />,
   reportes: <Reportes />,
   calificaciones: <Calificacion />,
   inscripciones: <Inscripciones />
