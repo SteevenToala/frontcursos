@@ -2,6 +2,7 @@
 
 import Users from "../models/User";
 import StorageNavegador from "./StorageNavegador";
+import FirebaseService from "./firebase/FirebaseService";
 
 const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/usuario`;
 
@@ -176,4 +177,41 @@ export async function deleteUsuario(uid_firebase: string) {
   } catch (error) {
     throw error;
   }
+}
+
+export async function getDashboardDataUsuario(uid_firebase: string) {
+  try {
+    const user = StorageNavegador.getItemWithExpiry("user") as Users;
+    const token = user?.token;
+    // El backend espera el UID como parámetro de consulta (query param) o en el token
+    // Por la implementación actual, el backend obtiene el UID del token (req.userUid)
+    // Así que NO es necesario enviar el UID en el header ni como query param
+    // Solo envía el token correctamente
+    const response = await fetch(`${API_URL}/dashboard`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Error obteniendo dashboard del usuario');
+    }
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
+
+/**
+ * Cambia la contraseña del usuario autenticado en Firebase.
+ * @param uid_firebase UID del usuario (no usado, para compatibilidad de interfaz)
+ * @param currentPassword Contraseña actual
+ * @param newPassword Nueva contraseña
+ * @returns {Promise<boolean|{success: false, error: string}>}
+ */
+export async function updateUsuarioPassword(uid_firebase: string, currentPassword: string, newPassword: string) {
+  // Solo se usa Firebase para cambiar la contraseña, el backend no almacena la contraseña
+  return await FirebaseService.updatePassword(newPassword, currentPassword);
 }
