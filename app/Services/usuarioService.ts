@@ -215,3 +215,26 @@ export async function updateUsuarioPassword(uid_firebase: string, currentPasswor
   // Solo se usa Firebase para cambiar la contraseña, el backend no almacena la contraseña
   return await FirebaseService.updatePassword(newPassword, currentPassword);
 }
+
+export async function obtenerListaUsuarios(id:number) {
+  try {
+    const user = StorageNavegador.getItemWithExpiry("user") as Users;
+    const token = user?.token;
+    const response = await fetch(`${API_URL}/evento/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Error registrando usuario');
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
