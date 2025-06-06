@@ -6,10 +6,13 @@ import FirebaseService from "./firebase/FirebaseService";
 
 const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/usuario`;
 
-export async function registerUsuario(userData: any) {
+export async function registerUsuario(userData: any, token?: string) {
   try {
-    const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token=user?.token;
+    if (!token) {
+      const user = StorageNavegador.getItemWithExpiry("user") as Users;
+      token = user?.token;
+    }
+
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
@@ -34,7 +37,7 @@ export async function getUsuarios() {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
-    
+
     const response = await fetch(API_URL, {
       method: 'GET',
       headers: {
@@ -58,7 +61,7 @@ export async function getUsuarioByFirebaseUid(uid_firebase: string) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
-    
+
     const response = await fetch(`${API_URL}/firebase/${uid_firebase}`, {
       method: 'GET',
       headers: {
@@ -82,7 +85,7 @@ export async function updateUsuario(uid_firebase: string, userData: Partial<User
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
-    
+
     const response = await fetch(`${API_URL}/${uid_firebase}`, {
       method: 'PUT',
       headers: {
@@ -107,7 +110,7 @@ export async function updateUsuarioEstado(uid_firebase: string, estado: string) 
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
-    
+
     const response = await fetch(`${API_URL}/${uid_firebase}/estado`, {
       method: 'PUT',
       headers: {
@@ -132,10 +135,10 @@ export async function uploadUsuarioFoto(uid_firebase: string, fotoFile: File) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
-    
+
     const formData = new FormData();
     formData.append('foto', fotoFile);
-    
+
     const response = await fetch(`${API_URL}/${uid_firebase}/foto`, {
       method: 'POST',
       headers: {
@@ -159,7 +162,7 @@ export async function deleteUsuario(uid_firebase: string) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
-    
+
     const response = await fetch(`${API_URL}/${uid_firebase}`, {
       method: 'DELETE',
       headers: {
@@ -216,7 +219,7 @@ export async function updateUsuarioPassword(uid_firebase: string, currentPasswor
   return await FirebaseService.updatePassword(newPassword, currentPassword);
 }
 
-export async function obtenerListaUsuarios(id:number) {
+export async function obtenerListaUsuarios(id: number) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
