@@ -50,7 +50,7 @@ class FirebaseService {
         }
     }
 
-    static async registerWithEmailAndPassword(email: string, password: string, username: string) {
+    static async registerWithEmailAndPassword(email: string, password: string, username: string,rol:string|null) {
         try {
             const userCredential = await createUserWithEmailAndPassword(getAuth(), email, password);
             const user = userCredential.user;
@@ -68,7 +68,9 @@ class FirebaseService {
                 verify: verifyE,
                 token: idToken,
                 username: username,
-                urlUserImg: null
+                urlUserImg: null,
+                rol: rol ?? "estudiante",
+
             }, 60 * 60 * 1000);
         } catch (error) {
             console.error("Error de autenticación:", error);

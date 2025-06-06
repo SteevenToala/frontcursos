@@ -7,7 +7,7 @@ import { SiteLayout } from "@/components/site-layout";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Clock, DollarSign, ArrowLeft, CheckCircle, Star, AlertCircle, BookOpen} from "lucide-react";
+import { Calendar, MapPin, Clock, DollarSign, ArrowLeft, CheckCircle, Star, AlertCircle, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator"
@@ -143,10 +143,10 @@ export default function DetalleEventoPage() {
         {/* Navegación */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
           <Button variant="ghost" asChild>
-              <Link href="/" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Volver
-              </Link>
+            <Link href="/" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Volver
+            </Link>
           </Button>
         </div>
 
@@ -156,25 +156,31 @@ export default function DetalleEventoPage() {
             {/* Imagen principal */}
             <div className="relative h-96 rounded-xl overflow-hidden">
               <Image
-                  src={evento.urlFoto || "/placeholder.svg?height=400&width=600"}
-                  alt={evento.nombre}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
+                src={evento.urlFoto || "/placeholder.svg?height=400&width=600"}
+                alt={evento.nombre}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6">
                 <div className="flex gap-2 mb-4">
                   <Badge variant="secondary">{evento.tipoEvento}</Badge>
                   <Badge className="bg-primary">{evento.categoria}</Badge>
                   {evento.requiereAsistencia && (
                     <Badge variant="destructive">
                       <CheckCircle className="h-3 w-3 mr-1" />
-                      Asistencia obligatoria
+                      Asistencia obligatoria con un minimo de {evento.requiereAsistencia}%  de asistencia
                     </Badge>
                   )}
-                  </div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{evento.nombre}</h1>
+                  {!evento.requiereAsistencia && (
+                    <Badge variant="destructive">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Asistencia opcional
+                    </Badge>
+                  )}
                 </div>
+                <h1 className="text-3xl font-bold text-white mb-2">{evento.nombre}</h1>
+              </div>
               <h1 className="text-3xl font-bold mb-4">{evento.nombre}</h1>
               <p className="text-lg text-muted-foreground mb-6">{evento.descripcion}</p>
             </div>
@@ -212,16 +218,40 @@ export default function DetalleEventoPage() {
                     </div>
                   </div>
                 )}
-
-                <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <Star className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-blue-800">Nota mínima de aprobación</h4>
-                    <p className="text-sm text-blue-700">
-                      Necesitas obtener al menos {evento.notaAprovacion} puntos para aprobar este evento.
-                    </p>
+                {!evento.requiereAsistencia && (
+                  <div className="flex items-start gap-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-orange-800">Asistencia opcional</h4>
+                      <p className="text-sm text-orange-700">
+                        Este evento no requiere asistencia presencial para obtener la certificación.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
+                {evento.notaAprovacion && (
+                  <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <Star className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-800">Nota mínima de aprobación</h4>
+                      <p className="text-sm text-blue-700">
+                        Necesitas obtener al menos {evento.notaAprovacion} puntos para aprobar este evento.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!evento.notaAprovacion && (
+                  <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <Star className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-800">Nota mínima de aprobación</h4>
+                      <p className="text-sm text-blue-700">
+                        Este evento no requiere una nota mínima de aprobación para obtener el certificado.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

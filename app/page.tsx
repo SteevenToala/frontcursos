@@ -9,18 +9,23 @@ import './globals.css'
 import { useEffect, useState } from "react"
 import * as contenidoHomeService from "./Services/contenidoHomeService"
 import * as autoridadesService from "./Services/autoridadesService"
+import { obtenerEventosPopulares } from "./Services/eventoService"
 
 export default function Home() {
   const [contenido, setContenido] = useState<any>(null)
   const [autoridades, setAutoridades] = useState<any[]>([])
   const [showFullDesc, setShowFullDesc] = useState<{ [id: number]: boolean }>({})
   const [modalAutoridad, setModalAutoridad] = useState<any | null>(null)
+  const [eventosDestacados, setEventosDestacados] = useState([]);
 
   useEffect(() => {
     async function fetchContenido() {
       try {
         const data = await contenidoHomeService.getContenidoHome()
         setContenido(data)
+        const eventosDestacadis = await obtenerEventosPopulares();
+        setEventosDestacados(eventosDestacadis);
+        console.log(eventosDestacadis)
       } catch (error) {
         setContenido([])
       }
@@ -88,10 +93,10 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="auth-button">
-                  <Link href="/events">Explorar eventos</Link>
+                  <Link href="/sections">Explorar eventos</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="border-primary/30 text-primary">
-                  <Link href="/courses">Ver cursos</Link>
+                  <Link href="/sections/events/2">Ver cursos</Link>
                 </Button>
               </div>
               <div className="mt-8 flex items-center">
@@ -142,7 +147,7 @@ export default function Home() {
         </div>
       </section>
 
-       {/* Autoridades */}
+      {/* Autoridades */}
       <section className="py-16 bg-gradient-to-b from-red-50 to-white">
         <div className="container px-4 mx-auto">
           <div className="text-center mb-12">
@@ -155,7 +160,7 @@ export default function Home() {
             {autoridades.map((autoridad: any) => {
               const maxDescLength = 320;
               const isLong = autoridad.descripcion.length > maxDescLength;
-             
+
               return (
                 <div key={autoridad.id_autoridad} className="flex flex-col items-center bg-white rounded-2xl shadow-xl border border-primary/10 p-6 hover:shadow-2xl transition-shadow relative min-h-[370px] max-w-xs mx-auto group">
                   <div className="relative w-28 h-28 rounded-full overflow-hidden shadow mb-4 border-4 border-primary/20 bg-white flex items-center justify-center">
@@ -170,7 +175,7 @@ export default function Home() {
                   <h4 className="font-extrabold text-lg text-primary mb-1 text-center uppercase tracking-wide leading-tight group-hover:text-primary/80 transition-colors">{autoridad.nombre}</h4>
                   <p className="text-xs text-primary/70 mb-2 text-center font-semibold uppercase tracking-wider leading-tight">{autoridad.cargo}</p>
                   <div className="relative w-full flex-1 flex flex-col">
-                    <div className="text-xs text-muted-foreground text-justify w-full px-0" style={{lineHeight: '1.5', maxHeight: '7.5em', overflow: 'hidden', position: 'relative'}}>
+                    <div className="text-xs text-muted-foreground text-justify w-full px-0" style={{ lineHeight: '1.5', maxHeight: '7.5em', overflow: 'hidden', position: 'relative' }}>
                       {autoridad.descripcion.slice(0, 400)}{autoridad.descripcion.length > 400 ? '...' : ''}
                     </div>
                     {autoridad.descripcion.length > 400 && (
@@ -191,45 +196,45 @@ export default function Home() {
             })}
           </div>
 
-      {/* Modal para mostrar información completa de la autoridad */}
-      {modalAutoridad && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-2xl p-0 max-w-md w-[95vw] max-h-[90vh] relative flex flex-col animate-fade-in">
-            <button
-              className="absolute top-2 right-2 text-primary text-2xl font-bold hover:text-red-500 z-10"
-              onClick={() => setModalAutoridad(null)}
-              aria-label="Cerrar"
-            >
-              ×
-            </button>
-            <div className="flex flex-col items-center p-6 overflow-y-auto" style={{maxHeight: '80vh'}}>
-              <div className="relative w-24 h-24 rounded-full overflow-hidden shadow mb-4 border-2 border-primary/20 bg-white flex items-center justify-center">
-                <Image
-                  src={modalAutoridad.foto_url}
-                  alt={modalAutoridad.nombre}
-                  fill
-                  className="object-contain"
-                  style={{ objectPosition: 'center top' }}
-                />
-              </div>
-              <h4 className="font-bold text-lg text-primary mb-1 text-center uppercase tracking-wide">{modalAutoridad.nombre}</h4>
-              <p className="text-sm text-primary/80 mb-3 text-center font-semibold uppercase tracking-wider">{modalAutoridad.cargo}</p>
-              <div className="text-sm text-muted-foreground text-justify w-full px-0" style={{lineHeight: '1.6'}}>
-                {modalAutoridad.descripcion.split(/(TERCER NIVEL|CUARTO NIVEL|DOCTORADO|MAESTR[ÍI]A|DIPLOMA[DT]O|LICENCIAD[OA]|INGENIER[OA]|ECONOMISTA|PSIC[ÓO]LOG[OA]|ABOGAD[OA]|PROFESOR[AE]|T[ÉE]CNIC[OA]|MAGISTER|DOCTORA?)/gi).map((part: string, idx: number) => {
-                  if (["TERCER NIVEL","CUARTO NIVEL","DOCTORADO","MAESTRÍA","MAESTRIA","DIPLOMADO","DIPLOMATA","LICENCIADO","LICENCIADA","INGENIERO","INGENIERA","ECONOMISTA","PSICÓLOGA","PSICÓLOGO","ABOGADA","ABOGADO","PROFESORA","PROFESOR","TÉCNICO","TÉCNICA","MAGISTER","DOCTORA","DOCTOR"].includes(part.trim().toUpperCase())) {
-                    return <div key={idx} className="mt-2 mb-1 font-bold text-primary/90 text-xs tracking-widest uppercase">{part}</div>;
-                  }
-                  return <span key={idx}>{part}</span>;
-                })}
+          {/* Modal para mostrar información completa de la autoridad */}
+          {modalAutoridad && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="bg-white rounded-xl shadow-2xl p-0 max-w-md w-[95vw] max-h-[90vh] relative flex flex-col animate-fade-in">
+                <button
+                  className="absolute top-2 right-2 text-primary text-2xl font-bold hover:text-red-500 z-10"
+                  onClick={() => setModalAutoridad(null)}
+                  aria-label="Cerrar"
+                >
+                  ×
+                </button>
+                <div className="flex flex-col items-center p-6 overflow-y-auto" style={{ maxHeight: '80vh' }}>
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden shadow mb-4 border-2 border-primary/20 bg-white flex items-center justify-center">
+                    <Image
+                      src={modalAutoridad.foto_url}
+                      alt={modalAutoridad.nombre}
+                      fill
+                      className="object-contain"
+                      style={{ objectPosition: 'center top' }}
+                    />
+                  </div>
+                  <h4 className="font-bold text-lg text-primary mb-1 text-center uppercase tracking-wide">{modalAutoridad.nombre}</h4>
+                  <p className="text-sm text-primary/80 mb-3 text-center font-semibold uppercase tracking-wider">{modalAutoridad.cargo}</p>
+                  <div className="text-sm text-muted-foreground text-justify w-full px-0" style={{ lineHeight: '1.6' }}>
+                    {modalAutoridad.descripcion.split(/(TERCER NIVEL|CUARTO NIVEL|DOCTORADO|MAESTR[ÍI]A|DIPLOMA[DT]O|LICENCIAD[OA]|INGENIER[OA]|ECONOMISTA|PSIC[ÓO]LOG[OA]|ABOGAD[OA]|PROFESOR[AE]|T[ÉE]CNIC[OA]|MAGISTER|DOCTORA?)/gi).map((part: string, idx: number) => {
+                      if (["TERCER NIVEL", "CUARTO NIVEL", "DOCTORADO", "MAESTRÍA", "MAESTRIA", "DIPLOMADO", "DIPLOMATA", "LICENCIADO", "LICENCIADA", "INGENIERO", "INGENIERA", "ECONOMISTA", "PSICÓLOGA", "PSICÓLOGO", "ABOGADA", "ABOGADO", "PROFESORA", "PROFESOR", "TÉCNICO", "TÉCNICA", "MAGISTER", "DOCTORA", "DOCTOR"].includes(part.trim().toUpperCase())) {
+                        return <div key={idx} className="mt-2 mb-1 font-bold text-primary/90 text-xs tracking-widest uppercase">{part}</div>;
+                      }
+                      return <span key={idx}>{part}</span>;
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
         </div>
       </section>
 
-       {/* Contenido Home dinámico */}
+      {/* Contenido Home dinámico */}
       <section className="py-16 bg-gradient-to-b from-primary/5 to-white">
         <div className="container px-4 mx-auto">
           <h2 className="text-3xl font-bold mb-8 text-center text-primary">Recursos destacados</h2>
@@ -265,19 +270,19 @@ export default function Home() {
                 title: "Conferencia de Desarrollo Web 2023",
                 date: "15 de Junio, 2023",
                 location: "Madrid, España",
-                image: "/placeholder.svg?height=200&width=400",
+                image: "https://www.caf.com/media/4662282/esp-conferencia_washington-2023.png",
               },
               {
                 title: "Workshop de UX/UI Design",
                 date: "22 de Junio, 2023",
                 location: "Barcelona, España",
-                image: "/placeholder.svg?height=200&width=400",
+                image: "https://prismmecom.b-cdn.net/media/3716/prism-blog-banner-3a.jpg",
               },
               {
                 title: "Masterclass de Marketing Digital",
                 date: "30 de Junio, 2023",
                 location: "Valencia, España",
-                image: "/placeholder.svg?height=200&width=400",
+                image: "https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/sites/97591/images/kD74jelyRRS8GrGmBKKU_file.jpg",
               },
             ].map((event, index) => (
               <div
@@ -298,7 +303,7 @@ export default function Home() {
                     <span className="text-sm">{event.location}</span>
                   </div>
                   <Button asChild className="w-full auth-button">
-                    <Link href="/events">Reservar plaza</Link>
+                    <Link href={``}>Reservar plaza</Link>
                   </Button>
                 </div>
               </div>
@@ -306,7 +311,7 @@ export default function Home() {
           </div>
           <div className="text-center mt-10">
             <Button asChild variant="outline" className="border-primary/30 text-primary">
-              <Link href="/events">Ver todos los eventos</Link>
+              <Link href="/sections">Ver todos los eventos</Link>
             </Button>
           </div>
         </div>
@@ -322,66 +327,48 @@ export default function Home() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              {
-                title: "Desarrollo Full Stack",
-                instructor: "María González",
-                duration: "12 semanas",
-                level: "Intermedio",
-                price: "299€",
-                image: "/placeholder.svg?height=200&width=400",
-              },
-              {
-                title: "Diseño UX/UI Avanzado",
-                instructor: "Carlos Martínez",
-                duration: "8 semanas",
-                level: "Avanzado",
-                price: "249€",
-                image: "/placeholder.svg?height=200&width=400",
-              },
-              {
-                title: "Marketing Digital Completo",
-                instructor: "Laura Sánchez",
-                duration: "10 semanas",
-                level: "Todos los niveles",
-                price: "199€",
-                image: "/placeholder.svg?height=200&width=400",
-              },
-            ].map((course, index) => (
+
+            {eventosDestacados.map((evento) => (
               <div
-                key={index}
+                key={evento.id_evento}
                 className="bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div className="relative h-48">
-                  <Image src={course.image || "/placeholder.svg"} alt={course.title} fill className="object-cover" />
+                  <Image
+                    src={evento.urlfoto || '/placeholder.svg'}
+                    alt={evento.nombre}
+                    fill
+                    className="object-cover"
+                  />
                   <div className="absolute bottom-0 right-0 bg-primary text-white text-xs font-bold px-3 py-1 m-2 rounded-full">
-                    {course.price}
+                    {evento.estudiantes} estudiantes
                   </div>
                 </div>
                 <div className="p-6">
-                  <h3 className="font-bold text-lg mb-2">{course.title}</h3>
+                  <h3 className="font-bold text-lg mb-2">{evento.nombre}</h3>
                   <div className="flex items-center text-muted-foreground mb-2">
                     <Users className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{course.instructor}</span>
+                    <span className="text-sm">{evento.organizador}</span>
                   </div>
                   <div className="flex items-center text-muted-foreground mb-2">
                     <Clock className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{course.duration}</span>
+                    <span className="text-sm">Duración: {evento.duracion} horas</span>
                   </div>
                   <div className="flex items-center text-muted-foreground mb-4">
                     <Award className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{course.level}</span>
+                    <span className="text-sm">Nivel: General</span>
                   </div>
                   <Button asChild className="w-full auth-button">
-                    <Link href="/courses">Ver detalles</Link>
+                    <Link href={`/sections/events_detail/${evento.id_evento}`}>Ver detalles</Link>
                   </Button>
                 </div>
               </div>
             ))}
+
           </div>
           <div className="text-center mt-10">
             <Button asChild variant="outline" className="border-primary/30 text-primary">
-              <Link href="/courses">Ver todos los cursos</Link>
+              <Link href="/sections/events/2">Ver todos los cursos</Link>
             </Button>
           </div>
         </div>
@@ -428,7 +415,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-     
+
 
       {/* CTA Section */}
       <section className="py-20 bg-primary">
@@ -439,11 +426,13 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90">
-              <Link href="/register">Inscribirse ahora</Link>
+              <Link href="/pages/register">Inscribirse ahora</Link>
             </Button>
+            {/*}
             <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
               <Link href="/contact">Contactar</Link>
             </Button>
+        {*/}
           </div>
         </div>
       </section>
