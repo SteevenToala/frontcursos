@@ -9,12 +9,15 @@ import { getDataDashboard } from '@/app/Services/dashboardService';
 
 export default function Inicio() {
     const [data, setData] = useState<{ TotalEventos: number; UsuariosRegistrados: number; eventosRecientes: [{ nombre: string, visible: string }] } | null>(null);
+    const [cursosPopulares, setCursosPopularesData] = useState<Array<{ nombre: string; estudiantes: string; organizador: string; id_evento: number }> | null>(null);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
                 const result = await getDataDashboard();
                 setData(result);
+                setCursosPopularesData(result.eventosPopulares)
+
             } catch (error) {
                 console.error("Error al obtener autoridades", error);
             } finally {
@@ -69,10 +72,8 @@ export default function Inicio() {
                     <CardContent className="p-4">
                         <h2 className="text-lg font-bold mb-2">Acciones Rápidas</h2>
                         <div className="flex flex-wrap gap-4">
-                            <Button className="bg-red-600 hover:bg-red-700">+ Nuevo Evento</Button>
-                            <Button className="bg-red-600 hover:bg-red-700">+ Nuevo Curso</Button>
-                            <Button variant="outline">Ver Eventos</Button>
-                            <Button variant="outline">Ver Cursos</Button>
+                            <Button className="bg-red-600 hover:bg-red-700"
+                            >+ Nuevo Evento</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -83,7 +84,7 @@ export default function Inicio() {
                         <ul className="space-y-2">
                             {loading ? (
                                 <li>Cargando eventos recientes...</li>
-                            ): (
+                            ) : (
                                 data?.eventosRecientes?.map((evento, index) => (
                                     <li key={index} className="flex justify-between items-center">
                                         <span>{evento.nombre}</span>
@@ -110,27 +111,21 @@ export default function Inicio() {
                 <CardContent className="p-4">
                     <h2 className="text-lg font-bold mb-4">Cursos Más Populares</h2>
                     <ul className="space-y-4">
-                        <li className="flex justify-between">
-                            <div>
-                                <p className="font-semibold">Desarrollo Full Stack</p>
-                                <p className="text-sm text-gray-500">Instructor: María González</p>
-                            </div>
-                            <span className="text-red-700 font-semibold">1,250 estudiantes</span>
-                        </li>
-                        <li className="flex justify-between">
-                            <div>
-                                <p className="font-semibold">Diseño UX/UI Avanzado</p>
-                                <p className="text-sm text-gray-500">Instructor: Carlos Martínez</p>
-                            </div>
-                            <span className="text-red-700 font-semibold">850 estudiantes</span>
-                        </li>
-                        <li className="flex justify-between">
-                            <div>
-                                <p className="font-semibold">Marketing Digital Completo</p>
-                                <p className="text-sm text-gray-500">Instructor: Laura Sánchez</p>
-                            </div>
-                            <span className="text-red-700 font-semibold">2,100 estudiantes</span>
-                        </li>
+                        {loading ? (
+                            <li>Cargando eventos populares...</li>
+                        ) : (
+                            cursosPopulares?.map((evento, index) => (
+                                <li key={evento.id_evento} className="flex justify-between">
+                                    <div>
+                                        <p className="font-semibold">{evento.nombre}</p>
+                                        <p className="text-sm text-gray-500">Instructor: {evento.organizador}</p>
+                                    </div>
+                                    <span className="text-red-700 font-semibold">{evento.estudiantes} estudiantes</span>
+                                </li>
+
+                            ))
+                        )}
+
                     </ul>
                 </CardContent>
             </Card>

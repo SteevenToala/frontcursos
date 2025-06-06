@@ -60,3 +60,36 @@ export async function calificarEstudiante(data: { nota: number, asistencia: numb
     return dat;
 }
 
+
+/**
+ * metodo para generar certificados de los estudiantes del evento 
+ */
+export async function generarCertificados(data: { idEvento: number}) {
+    const user = StorageNavegador.getItemWithExpiry("user") as Users;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/certificado`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${user.token}`
+        },
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Error al obtener datos dashboard');
+    const dat = res.json();
+    return dat;
+}
+/**
+ * metodo para obtener los eventos populares 
+ */
+export async function obtenerEventosPopulares() {
+    const res = await fetch(`${API_URL}/populares`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    if (!res.ok) throw new Error('Error al obtener datos dashboard');
+    const dat = res.json();
+    return dat;
+}
+

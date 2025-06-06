@@ -135,7 +135,7 @@ export default function SectionsPage() {
                     >
                       <div className="relative h-64">
                         <Image
-                          src={seccion.urlFoto || "/placeholder.svg"}
+                          src={seccion.icono_url || "/placeholder.svg"}
                           alt={seccion.nombre}
                           fill
                           className="object-cover"

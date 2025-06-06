@@ -23,9 +23,37 @@ export function EventoForm(a: EventoFormProps) {
         let val: any = value;
         if (type === "checkbox" && e.target instanceof HTMLInputElement) {
             val = e.target.checked;
+
+            // Si se desactiva "requiere asistencia", limpiar el porcentaje
+            if (name === "requiereAsistencia") {
+                a.setFormData((prev) => ({
+                    ...prev,
+                    requiereAsistencia: (e.target as HTMLInputElement).checked ? 0 : null, // 0 o el valor por defecto
+                }));
+                return;
+            }
+
+            if (name === "requiereNotaAprobacion") {
+                a.setFormData((prev) => ({
+                    ...prev,
+                    [name]: val,
+                    notaAprovacion: (e.target as HTMLInputElement).checked ? 0 : null, // 0 o el valor por defecto
+                }));
+                return;
+            }
+            // Campos numéricos
+            const numericFields = ["costo", "notaAprovacion", "numeroHoras", "idOrganizador", "idSeccion", "requiereAsistencia"];
+            if (numericFields.includes(name)) {
+                val = value === "" ? "" : Number(value);
+                if (name === "costo" && val < 0) return;
+            }
+
+            a.setFormData((prev) => ({ ...prev, [name]: val }));
+
         }
 
-        const numericFields = ["costo", "notaAprovacion", "numeroHoras", "idOrganizador", "idSeccion"];
+
+        const numericFields = ["costo", "notaAprovacion", "numeroHoras", "idOrganizador", "idSeccion","requiereAsistencia"];
         if (numericFields.includes(name)) {
             val = value === "" ? "" : Number(value);
             if (name === "costo" && val < 0) return;
@@ -160,16 +188,50 @@ export function EventoForm(a: EventoFormProps) {
                 <Input name="numeroHoras" type="number" min={0} placeholder="Número de horas" value={a.formData.numeroHoras} onChange={handleChange} />
             </div>
 
-
-
-            <div>
-                <label className="block mb-1 font-medium">Nota de Aprovacion</label>
-                <Input name="notaAprovacion" type="number" placeholder="Nota de aprobación" value={a.formData.notaAprovacion} onChange={handleChange} />
-            </div>
             <label className="flex items-center space-x-2">
-                <input type="checkbox" name="requiereAsistencia" checked={a.formData.requiereAsistencia} onChange={handleChange} />
+                <input
+                    type="checkbox"
+                    name="notaAprovacion"
+                    checked={a.formData.notaAprovacion != null}
+                    onChange={handleChange}
+                />
+                <span className="text-sm">Requiere nota de aprobación</span>
+            </label>
+            {a.formData.notaAprovacion !== null  && (
+                <div>
+                    <label className="block mb-1 font-medium">Nota de Aprobación</label>
+                    <Input
+                        name="notaAprovacion"
+                        type="number"
+                        min={0}
+                        max={100}
+                        placeholder="Ej: 70"
+                        value={a.formData.notaAprovacion ?? ""}
+                        onChange={handleChange}
+                    />
+                </div>
+            )}
+
+
+
+            <label className="flex items-center space-x-2">
+                <input type="checkbox" name="requiereAsistencia" checked={a.formData.requiereAsistencia !== null} onChange={handleChange} />
                 <span className="text-sm">Requiere asistencia</span>
             </label>
+            {a.formData.requiereAsistencia !== null  && (
+                <div>
+                    <label className="block mb-1 font-medium">Porcentaje de asistencia requerido (%)</label>
+                    <Input
+                        name="requiereAsistencia"
+                        type="number"
+                        min={0}
+                        max={100}
+                        placeholder="Ej: 80"
+                        value={a.formData.requiereAsistencia ?? ""}
+                        onChange={handleChange}
+                    />
+                </div>
+            )}
 
             <textarea
                 name="descripcion"
