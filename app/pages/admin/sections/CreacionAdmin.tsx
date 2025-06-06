@@ -3,13 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -18,27 +12,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/app/hooks/use-toast"
 import {
-  UserPlus,
   Users,
-  Eye,
-  EyeOff,
-  Loader2,
   RefreshCw,
-  AlertCircle,
   Trash2,
-  Shield,
-  Mail,
-  Phone,
-  Calendar,
 } from "lucide-react"
+import { deleteUsuario, registerUsuario } from "@/app/Services/usuarioService"
+import FirebaseService from "@/app/Services/firebase/FirebaseService"
+import { UserListCard } from "@/components/UserListCard"
+import { FormularioCrearUsuario } from "@/components/FormularioCrearUsuario"
 
 // Tipos
 interface Usuario {
-  id: number
+  uid_firebase: string
   nombres: string
   apellidos: string
   correo: string
@@ -57,7 +44,6 @@ interface FormularioUsuario {
   contraseña: string
   confirmarContraseña: string
   rol: string
-  descripcion: string
 }
 
 // Servicio para usuarios
@@ -82,44 +68,34 @@ class UsuarioService {
   }
 
   static async crearUsuario(usuario: Omit<FormularioUsuario, "confirmarContraseña">): Promise<boolean> {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/usuarios/crear-admin`, {
-        method: "POST",
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(usuario),
-      })
-
-      if (!response.ok) {
-        let errorMessage = `Error ${response.status}: ${response.statusText}`
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.message || errorData.error || errorMessage
-        } catch {
-          // Si no se puede parsear el JSON, usar el mensaje por defecto
-        }
-        throw new Error(errorMessage)
-      }
-
-      return true
-    } catch (error) {
-      console.error("Error al crear usuario:", error)
-      if (error instanceof Error) {
-        throw error
-      }
-      throw new Error("Error de conexión al crear el usuario")
+    const token = await FirebaseService.registerWithEmailAndPassword(usuario.correo, usuario.contraseña, usuario.nombres, true);
+    const { contraseña, ...data } = usuario
+    const useaAlmacenar = {
+      ...data,
+      url_foto: " ",
+      estado: "activo",
+      direccion: " "
     }
+    if (!token) {
+      throw new Error("No se pudo registrar al usuario. Por favor, intente nuevamente.");
+    }
+    const response = await registerUsuario(useaAlmacenar, token);
+    if (!response.ok) {
+      return true;
+    }
+    return false;
   }
 
-  static async obtenerUsuarios(): Promise<Usuario[]> {
+  static async obtenerUsuarios(): Promise<{ usersAdmin: Usuario[], usersDesarrolladores: Usuario[] }> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/usuarios/administradores`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/usuarrios-admin`, {
         headers: this.getAuthHeaders(),
       })
 
       if (!response.ok) {
         throw new Error("Error al obtener usuarios")
       }
-
+      console.log("Response:", response)
       return response.json()
     } catch (error) {
       console.error("Error al obtener usuarios:", error)
@@ -127,13 +103,9 @@ class UsuarioService {
     }
   }
 
-  static async eliminarUsuario(id: number): Promise<boolean> {
+  static async eliminarUsuario(id: string): Promise<boolean> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/usuarios/${id}`, {
-        method: "DELETE",
-        headers: this.getAuthHeaders(),
-      })
-
+      const response = await deleteUsuario(id);
       if (!response.ok) {
         throw new Error("Error al eliminar usuario")
       }
@@ -145,28 +117,11 @@ class UsuarioService {
     }
   }
 
-  static async actualizarEstadoUsuario(id: number, estado: "Activo" | "Inactivo"): Promise<boolean> {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/usuarios/${id}/estado`, {
-        method: "PUT",
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify({ estado }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Error al actualizar estado del usuario")
-      }
-
-      return true
-    } catch (error) {
-      console.error("Error al actualizar estado:", error)
-      throw new Error("No se pudo actualizar el estado del usuario")
-    }
-  }
 }
 
 export default function CrearUsuariosAdmin() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
+  const [desarrollador, setDesarrollador] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -185,8 +140,7 @@ export default function CrearUsuariosAdmin() {
     telefono: "",
     contraseña: "",
     confirmarContraseña: "",
-    rol: "Administrador",
-    descripcion: "",
+    rol: "admin2",
   })
 
   const [erroresValidacion, setErroresValidacion] = useState<Partial<FormularioUsuario>>({})
@@ -196,7 +150,8 @@ export default function CrearUsuariosAdmin() {
       setLoading(true)
       setError(null)
       const usuariosData = await UsuarioService.obtenerUsuarios()
-      setUsuarios(usuariosData)
+      setUsuarios(usuariosData.usersAdmin)
+      setDesarrollador(usuariosData.usersDesarrolladores)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error desconocido"
       setError(errorMessage)
@@ -270,7 +225,6 @@ export default function CrearUsuariosAdmin() {
         contraseña: "",
         confirmarContraseña: "",
         rol: "Administrador",
-        descripcion: "",
       })
       setErroresValidacion({})
 
@@ -292,7 +246,7 @@ export default function CrearUsuariosAdmin() {
     if (!modalEliminar.usuario) return
 
     try {
-      await UsuarioService.eliminarUsuario(modalEliminar.usuario.id)
+      await UsuarioService.eliminarUsuario(modalEliminar.usuario.uid_firebase)
       toast({
         title: "Usuario eliminado",
         description: "El usuario ha sido eliminado correctamente",
@@ -309,25 +263,6 @@ export default function CrearUsuariosAdmin() {
     }
   }
 
-  const handleCambiarEstado = async (usuario: Usuario) => {
-    const nuevoEstado = usuario.estado === "Activo" ? "Inactivo" : "Activo"
-
-    try {
-      await UsuarioService.actualizarEstadoUsuario(usuario.id, nuevoEstado)
-      toast({
-        title: "Estado actualizado",
-        description: `El usuario ha sido ${nuevoEstado.toLowerCase()}`,
-      })
-      await cargarUsuarios()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Error desconocido"
-      toast({
-        variant: "destructive",
-        title: "Error al actualizar estado",
-        description: errorMessage,
-      })
-    }
-  }
 
   const handleInputChange = (field: keyof FormularioUsuario, value: string) => {
     setFormulario((prev) => ({ ...prev, [field]: value }))
@@ -358,269 +293,41 @@ export default function CrearUsuariosAdmin() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Formulario de creación */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="h-5 w-5" />
-                  Crear Nuevo Usuario
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="nombres">Nombres *</Label>
-                      <Input
-                        id="nombres"
-                        value={formulario.nombres}
-                        onChange={(e) => handleInputChange("nombres", e.target.value)}
-                        placeholder="Nombres"
-                        className={erroresValidacion.nombres ? "border-destructive" : ""}
-                      />
-                      {erroresValidacion.nombres && (
-                        <p className="text-sm text-destructive">{erroresValidacion.nombres}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="apellidos">Apellidos *</Label>
-                      <Input
-                        id="apellidos"
-                        value={formulario.apellidos}
-                        onChange={(e) => handleInputChange("apellidos", e.target.value)}
-                        placeholder="Apellidos"
-                        className={erroresValidacion.apellidos ? "border-destructive" : ""}
-                      />
-                      {erroresValidacion.apellidos && (
-                        <p className="text-sm text-destructive">{erroresValidacion.apellidos}</p>
-                      )}
-                    </div>
-                  </div>
+          <FormularioCrearUsuario
+            formulario={formulario}
+            erroresValidacion={erroresValidacion}
+            mostrarContraseña={mostrarContraseña}
+            mostrarConfirmarContraseña={mostrarConfirmarContraseña}
+            submitting={submitting}
+            handleSubmit={handleSubmit}
+            handleInputChange={handleInputChange}
+            setMostrarContraseña={setMostrarContraseña}
+            setMostrarConfirmarContraseña={setMostrarConfirmarContraseña}
+          />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="correo">Correo Electrónico *</Label>
-                    <Input
-                      id="correo"
-                      type="email"
-                      value={formulario.correo}
-                      onChange={(e) => handleInputChange("correo", e.target.value)}
-                      placeholder="correo@ejemplo.com"
-                      className={erroresValidacion.correo ? "border-destructive" : ""}
-                    />
-                    {erroresValidacion.correo && <p className="text-sm text-destructive">{erroresValidacion.correo}</p>}
-                  </div>
+          <div className="lg:col-span-2 space-y-8">
 
-                  <div className="space-y-2">
-                    <Label htmlFor="telefono">Teléfono</Label>
-                    <Input
-                      id="telefono"
-                      value={formulario.telefono}
-                      onChange={(e) => handleInputChange("telefono", e.target.value)}
-                      placeholder="+57 300 123 4567"
-                    />
-                  </div>
+            {/* Lista de usuarios Admin*/}
+            <UserListCard
+              titulo="Usuarios Administradores"
+              usuarios={usuarios}
+              error={error}
+              loading={loading}
+              onRetry={cargarUsuarios}
+              onDelete={(usuario) => setModalEliminar({ visible: true, usuario })}
+            />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="contraseña">Contraseña *</Label>
-                    <div className="relative">
-                      <Input
-                        id="contraseña"
-                        type={mostrarContraseña ? "text" : "password"}
-                        value={formulario.contraseña}
-                        onChange={(e) => handleInputChange("contraseña", e.target.value)}
-                        placeholder="Mínimo 8 caracteres"
-                        className={erroresValidacion.contraseña ? "border-destructive pr-10" : "pr-10"}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setMostrarContraseña(!mostrarContraseña)}
-                      >
-                        {mostrarContraseña ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    {erroresValidacion.contraseña && (
-                      <p className="text-sm text-destructive">{erroresValidacion.contraseña}</p>
-                    )}
-                  </div>
+            <UserListCard
+              titulo="Usuarios Desarrolladores"
+              usuarios={desarrollador}
+              error={error}
+              loading={loading}
+              onRetry={cargarUsuarios}
+              onDelete={(usuario) => setModalEliminar({ visible: true, usuario })}
+            />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmarContraseña">Confirmar Contraseña *</Label>
-                    <div className="relative">
-                      <Input
-                        id="confirmarContraseña"
-                        type={mostrarConfirmarContraseña ? "text" : "password"}
-                        value={formulario.confirmarContraseña}
-                        onChange={(e) => handleInputChange("confirmarContraseña", e.target.value)}
-                        placeholder="Confirma tu contraseña"
-                        className={erroresValidacion.confirmarContraseña ? "border-destructive pr-10" : "pr-10"}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setMostrarConfirmarContraseña(!mostrarConfirmarContraseña)}
-                      >
-                        {mostrarConfirmarContraseña ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    {erroresValidacion.confirmarContraseña && (
-                      <p className="text-sm text-destructive">{erroresValidacion.confirmarContraseña}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="rol">Rol *</Label>
-                    <Select value={formulario.rol} onValueChange={(value) => handleInputChange("rol", value)}>
-                      <SelectTrigger className={erroresValidacion.rol ? "border-destructive" : ""}>
-                        <SelectValue placeholder="Selecciona un rol" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Administrador">Administrador</SelectItem>
-                        <SelectItem value="Super Administrador">Super Administrador</SelectItem>
-                        <SelectItem value="Moderador">Moderador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {erroresValidacion.rol && <p className="text-sm text-destructive">{erroresValidacion.rol}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="descripcion">Descripción</Label>
-                    <Textarea
-                      id="descripcion"
-                      value={formulario.descripcion}
-                      onChange={(e) => handleInputChange("descripcion", e.target.value)}
-                      placeholder="Descripción opcional del usuario..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={submitting}>
-                    {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Crear Usuario
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Lista de usuarios */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Usuarios Administradores
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {error ? (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="flex items-center justify-between">
-                      <span>{error}</span>
-                      <Button variant="outline" size="sm" onClick={cargarUsuarios}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Reintentar
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
-                ) : loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                    <span>Cargando usuarios...</span>
-                  </div>
-                ) : usuarios.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No hay usuarios</h3>
-                    <p className="text-muted-foreground">Crea el primer usuario administrador</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Usuario</TableHead>
-                          <TableHead>Contacto</TableHead>
-                          <TableHead>Rol</TableHead>
-                          <TableHead>Estado</TableHead>
-                          <TableHead>Fecha Creación</TableHead>
-                          <TableHead>Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {usuarios.map((usuario) => (
-                          <TableRow key={usuario.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <Shield className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <p className="font-medium">
-                                    {usuario.nombres} {usuario.apellidos}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">ID: {usuario.id}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1 text-sm">
-                                  <Mail className="h-3 w-3" />
-                                  <span>{usuario.correo}</span>
-                                </div>
-                                {usuario.telefono && (
-                                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                    <Phone className="h-3 w-3" />
-                                    <span>{usuario.telefono}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{usuario.rol}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={usuario.estado === "Activo" ? "default" : "secondary"}>
-                                {usuario.estado}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1 text-sm">
-                                <Calendar className="h-3 w-3" />
-                                <span>{new Date(usuario.fechaCreacion).toLocaleDateString()}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => handleCambiarEstado(usuario)}>
-                                  {usuario.estado === "Activo" ? "Desactivar" : "Activar"}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setModalEliminar({ visible: true, usuario })}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </div>
 
