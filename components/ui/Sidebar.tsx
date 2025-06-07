@@ -28,7 +28,7 @@ const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus },
   { id: "eventos", label: "Eventos", icon: Calendar },
-  { id: "Secciones", label: "Seecciones", icon: BookOpen },
+  { id: "Secciones", label: "Secciones", icon: BookOpen },
   { id: "autoridades", label: "Autoridades", icon: User },
   { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon },
   { id: "mision_vision", label: "Mision y Vision", icon: Settings },
