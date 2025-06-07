@@ -50,7 +50,8 @@ class FirebaseService {
         }
     }
 
-    static async registerWithEmailAndPassword(email: string, password: string, username: string,rol:string|null) {
+
+    static async registerWithEmailAndPassword(email: string, password: string, username: string,rol:string|null,noAlmacenartoken?: boolean ) {
         try {
             const userCredential = await createUserWithEmailAndPassword(getAuth(), email, password);
             const user = userCredential.user;
@@ -61,20 +62,23 @@ class FirebaseService {
             if (!verifyE) {
                 alert("verifica tu correo Electronico");
             }
-            StorageNavegador.saveToLocalStorageWithExpiry(
-                "user", {
-                uid: user.uid,
-                email: email,
-                verify: verifyE,
-                token: idToken,
-                username: username,
-                urlUserImg: null,
-                rol: rol ?? "estudiante",
+        if (!noAlmacenartoken) {
+        StorageNavegador.saveToLocalStorageWithExpiry(
+                    "user", {
+                    uid: user.uid,
+                    email: email,
+                    verify: verifyE,
+                    token: idToken,
+                    username: username,
+                    urlUserImg: null,
+                    rol: rol ?? "estudiante",
 
-            }, 60 * 60 * 1000);
+                }, 60 * 60 * 1000);
+        }
+        return idToken;
         } catch (error) {
             console.error("Error de autenticación:", error);
-            return true;
+            return null;
         }
     }
 

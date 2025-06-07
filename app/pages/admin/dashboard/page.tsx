@@ -11,10 +11,12 @@ import Reportes from '../sections/Reportes';
 import Calificacion from '../sections/Calificacion';
 import Inscripciones from '../sections/Inscripciones';
 import GestionCambio from '../sections/GestionCambio';
+import CreacionAdmin from '../sections/CreacionAdmin';
 import AdminLayout from '../layout';
 
 const sectionComponents: { [key: string]: React.ReactNode } = {
   dashboard: <Inicio />,
+  creacion_admin: <CreacionAdmin />,
   mision_vision: <MisionVision />,
   autoridades: <Autoridade />,
   solicitudes: <Solicitudes />,
