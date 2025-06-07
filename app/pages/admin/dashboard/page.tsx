@@ -13,6 +13,7 @@ import Inscripciones from '../sections/Inscripciones';
 import GestionCambio from '../sections/GestionCambio';
 import CreacionAdmin from '../sections/CreacionAdmin';
 import AdminLayout from '../layout';
+import Secciones from '../sections/Secciones';
 
 const sectionComponents: { [key: string]: React.ReactNode } = {
   dashboard: <Inicio />,
@@ -24,7 +25,8 @@ const sectionComponents: { [key: string]: React.ReactNode } = {
   reportes: <Reportes />,
   calificaciones: <Calificacion />,
   inscripciones: <Inscripciones />,
-  gestion_cambio: <GestionCambio />
+  gestion_cambio: <GestionCambio />,
+  Secciones: <Secciones />
 };
 
 export default function SidebarLayout() {
