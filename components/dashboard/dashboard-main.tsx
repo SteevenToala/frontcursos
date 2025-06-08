@@ -3,20 +3,14 @@ import { getDashboardDataUsuario } from "../../app/Services/usuarioService"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import User from "../../app/models/User"
-import { formatDate } from "../../lib/date-utils"
 import { isValid, parseISO } from "date-fns"
 import { 
-  BookOpen, 
   Calendar, 
   Award, 
   TrendingUp,
   Clock,
-  Users,
   GraduationCap,
-  ArrowRight,
   UserCheck,
-  CreditCard,
-  FileText
 } from "lucide-react"
 
 interface DashboardMainProps {
@@ -52,7 +46,7 @@ export function DashboardMain({ user }: DashboardMainProps) {
         setDashboardStats({
           eventosInscritos: inscripciones.length,
           eventosCompletados: inscripciones.filter((i:any) => i.estado_inscripcion === 'Aprobado' || i.estado_inscripcion === 'Completado').length,
-          certificadosObtenidos: inscripciones.filter((i:any) => (i.estado_inscripcion === 'Aprobado' || i.estado_inscripcion === 'Completado') && (i.nota ? i.nota >= 70 : true)).length,
+          certificadosObtenidos: dashboardData.user.certificados,
           horasTotales: inscripciones.reduce((sum:any, i:any) => sum + (i.evento?.num_horas || 0), 0),
           asistenciasRegistradas: inscripciones.reduce((sum:any, i:any) => sum + (i.porcentaje_asistencia || 0), 0),
           notasAprobatorias: inscripciones.filter((i:any) => i.nota && i.nota >= 70).length

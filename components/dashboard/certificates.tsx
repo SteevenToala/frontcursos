@@ -1,45 +1,43 @@
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { Card, CardContent } from "../ui/card"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { Badge } from "../ui/badge"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "../ui/select"
 import User from "../../app/models/User"
-import Certificado from "../../app/models/Certificado"
-import Inscripcion from "../../app/models/Inscripcion"
-import Evento from "../../app/models/Evento"
-import { formatDate, formatDateRange } from "../../lib/date-utils"
-import { 
+import {
   Award,
   Download,
   Share2,
   Search,
   Filter,
-  Calendar,
   GraduationCap,
   CheckCircle,
   ExternalLink,
   Star,
-  Trophy,
-  FileText,
   Clock,
-  MapPin
 } from "lucide-react"
-import { getDashboardDataUsuario } from "../../app/Services/usuarioService"
+import StorageNavegador from "@/app/Services/StorageNavegador"
+import { ShareSuccessModal } from "../ShareSuccessModal"
 
 // Interface for certificate data with related event and inscription info
-interface CertificateWithDetails extends Certificado {
-  inscripcion: Inscripcion;
-  evento: Evento;
-  calificacion?: number;
-  asistencia_porcentaje?: number;
+
+interface SimpleCertificate {
+  id_certificado: number;
+  nombre: string;
+  url_certificado: string;
+  url_foto: string;
+  categoria: string;
+  nota: number | null;
+  numero_horas: number;
 }
+
 
 interface CertificatesProps {
   user: User
@@ -48,9 +46,12 @@ interface CertificatesProps {
 export function Certificates({ user }: CertificatesProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterBy, setFilterBy] = useState("all")
-  const [certificatesWithDetails, setCertificatesWithDetails] = useState<CertificateWithDetails[]>([])
+  const [certificates, setCertificates] = useState<SimpleCertificate[]>([]);
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const uniqueCategories = ["all", ...new Set(certificates.map(cert => cert.categoria.toLowerCase()))];
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(true);
 
   useEffect(() => {
     async function fetchCertificates() {
@@ -59,99 +60,61 @@ export function Certificates({ user }: CertificatesProps) {
       try {
         const uid = user.uid_firebase || user.uid
         if (!uid) {
-          setCertificatesWithDetails([])
+          setCertificates([])
           setLoading(false)
           return
         }
-        const dashboardData = await getDashboardDataUsuario(uid)
-        // Solo certificados aprobados (estado_inscripcion === 'Aprobado' o 'Completado')
-        const certificados = (dashboardData.eventosInscritos || []).filter((i:any) => i.estado_inscripcion === 'Aprobado' || i.estado_inscripcion === 'Completado')
-        // Mapear a formato CertificateWithDetails
-        const details = certificados.map((i:any) => ({
-          id_certificado: i.id_inscripcion, // o el campo correcto si existe
-          inscripcion: i,
-          evento: i.evento,
-          calificacion: i.nota,
-          asistencia_porcentaje: i.porcentaje_asistencia
-        }))
-        setCertificatesWithDetails(details)
+        const idTokenString = StorageNavegador.getItemWithExpiry("user") as User
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/certificado`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idTokenString?.token}`
+          }
+        })
+        const data: SimpleCertificate[] = await res.json()
+        setCertificates(data)
       } catch (e) {
-        setCertificatesWithDetails([])
+        setError("Error al cargar certificados")
+        setCertificates([])
       }
       setLoading(false)
     }
     fetchCertificates()
   }, [user])
 
-  const filteredCertificates = certificatesWithDetails.filter(cert => {
-    const nombre = cert.evento?.nombre || "";
-    const categoria = cert.evento?.categoria_area || "";
-    const tipoCert = cert.tipo_certificado || "";
-    const tipoEvento = cert.evento?.tipo_evento || "";
-    const search = searchTerm || "";
-    const filter = filterBy || "";
+  const filteredCertificates = certificates.filter(cert =>
+    (filterBy === "all" || cert.categoria.toLowerCase() === filterBy.toLowerCase()) &&
+    cert.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    const matchesSearch = nombre.toLowerCase().includes(search.toLowerCase()) ||
-                         categoria.toLowerCase().includes(search.toLowerCase()) ||
-                         tipoCert.toLowerCase().includes(search.toLowerCase())
-    
-    const matchesFilter = filter === "all" || 
-                         categoria.toLowerCase().includes(filter.toLowerCase()) ||
-                         tipoEvento.toLowerCase().includes(filter.toLowerCase())
-    
-    return matchesSearch && matchesFilter
-  })
 
   const stats = {
-    totalCertificates: certificatesWithDetails.length,
-    totalHours: certificatesWithDetails.reduce((sum, cert) => sum + cert.evento.num_horas, 0),
-    avgGrade: certificatesWithDetails.filter(cert => cert.calificacion).length > 0 
-      ? (certificatesWithDetails
-          .filter(cert => cert.calificacion)
-          .reduce((sum, cert) => sum + (cert.calificacion || 0), 0) / 
-         certificatesWithDetails.filter(cert => cert.calificacion).length).toFixed(1)
-      : "N/A",
-    categoriesCompleted: [...new Set(certificatesWithDetails.map(cert => cert.evento.categoria_area))].length
-  }
-  const handleDownload = (certificate: CertificateWithDetails) => {
-    console.log(`Descargando certificado: CERT-${certificate.id_certificado}`)
-    // Aquí iría la lógica para descargar el certificado desde certificate.url_certificado
-    window.open(certificate.url_certificado, '_blank')
-  }
+    totalCertificates: certificates.length,
+    totalHours: certificates.reduce((sum, cert) => sum + (cert.numero_horas || 0), 0),
+    avgGrade: (() => {
+      const validNotas = certificates.filter(cert => typeof cert.nota === 'number' && cert.nota !== null);
+      if (validNotas.length === 0) return "--";
+      const sumNotas = validNotas.reduce((sum, cert) => sum + (cert.nota as number), 0);
+      return (sumNotas / validNotas.length).toFixed(1);
+    })(),
+    categoriesCompleted: new Set(certificates.map(cert => cert.categoria.toLowerCase())).size
+  };
 
-  const handleShare = (certificate: CertificateWithDetails) => {
-    const shareUrl = `${window.location.origin}/certificates/verify/${certificate.id_certificado}`
+  const handleShare = (cert: SimpleCertificate) => {
+    const shareUrl = `${cert.url_certificado}`;
     navigator.clipboard.writeText(shareUrl)
-    console.log(`URL copiada: ${shareUrl}`)
-    // Mostrar notificación de éxito
-  }
+      .then(() => {
+        setShareSuccess(true);
+        setShareModalOpen(true);
+      })
+      .catch(() => {
+        setShareSuccess(false);
+        setShareModalOpen(true);
+      });
+  };
 
-  const getCertificateTypeColor = (tipo: string) => {
-    if (!tipo) return "bg-gray-100 text-gray-800";
-    switch ((tipo || "").toLowerCase()) {
-      case "aprobación":
-        return "bg-green-100 text-green-800"
-      case "participación":
-        return "bg-blue-100 text-blue-800"
-      case "excelencia":
-        return "bg-purple-100 text-purple-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
 
-  const getModalityIcon = (modalidad: string) => {
-    switch (modalidad.toLowerCase()) {
-      case "virtual":
-        return "💻"
-      case "presencial":
-        return "🏫"
-      case "híbrido":
-        return "🔄"
-      default:
-        return "📚"
-    }
-  }
+
 
   if (loading) {
     return (
@@ -180,7 +143,7 @@ export function Certificates({ user }: CertificatesProps) {
         <p className="text-muted-foreground mb-6">
           Visualiza y gestiona todos tus certificados de eventos completados
         </p>
-        
+
         {/* Estadísticas rápidas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-primary/20">
@@ -242,145 +205,76 @@ export function Certificates({ user }: CertificatesProps) {
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por evento, categoría o tipo de certificado..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por evento, categoría o tipo de certificado..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+            </div>
+            <div className="flex gap-2">
+
+              <Select value={filterBy} onValueChange={setFilterBy}>
+                <SelectTrigger className="w-[200px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filtrar por categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat === "all" ? "Todas las categorías" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
             </div>
           </div>
-          <div className="flex gap-2">
-            <Select value={filterBy} onValueChange={setFilterBy}>
-              <SelectTrigger className="w-[160px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los filtros</SelectItem>
-                <SelectItem value="desarrollo">Desarrollo Web</SelectItem>
-                <SelectItem value="data science">Data Science</SelectItem>
-                <SelectItem value="diseño">Diseño</SelectItem>
-                <SelectItem value="curso">Cursos</SelectItem>
-                <SelectItem value="taller">Talleres</SelectItem>
-                <SelectItem value="seminario">Seminarios</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          </div>
         </CardContent>
-      </Card>      {/* Lista de certificados */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredCertificates.map((certificate) => (
-          <Card key={certificate.id_certificado} className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary">
+      </Card>
+      {/* Lista de certificados */}
+      <div>
+        {filteredCertificates.map(cert => (
+          <Card key={cert.id_certificado}>
             <CardContent className="p-6">
-              <div className="space-y-4">
-                {/* Header del certificado */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Trophy className="h-5 w-5 text-primary" />
-                      <Badge variant="secondary" className="text-xs">
-                        {certificate.evento.categoria_area}
-                      </Badge>
-                      <span className="text-lg">{getModalityIcon(certificate.evento.modalidad)}</span>
-                      <Badge className={`text-xs ${getCertificateTypeColor(certificate.tipo_certificado)}`}>
-                        {certificate.tipo_certificado}
-                      </Badge>
-                    </div>
-                    <h3 className="font-bold text-lg text-foreground leading-tight">
-                      {certificate.evento.nombre}
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                      {certificate.evento.tipo_evento} • {certificate.evento.modalidad}
-                    </p>
-                  </div>
-                  {certificate.calificacion && (
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-primary">
-                        {certificate.calificacion}%
-                      </div>
-                      <p className="text-xs text-muted-foreground">Calificación</p>
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center gap-4">
+                <img src={cert.url_foto} alt={cert.nombre} className="w-20 h-20 object-cover rounded" />
+                <div>
+                  <h3 className="font-bold">{cert.nombre}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    ID: CERT-{cert.id_certificado.toString().padStart(4, '0')}
+                  </p>
+                  <Badge variant="secondary" className="text-xs mt-1">
+                    {cert.categoria}
+                  </Badge>
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={() => window.open(cert.url_certificado, '_blank')}>
+                      <Download className="h-4 w-4 mr-2" /> Descargar
+                    </Button>
 
-                {/* Información del certificado */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">ID Certificado:</span>
-                    <span className="font-mono text-xs">CERT-{certificate.id_certificado.toString().padStart(4, '0')}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Fecha de emisión:</span>
-                    <span>{formatDate(certificate.fecha_emision)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Duración del evento:</span>
-                    <span>{certificate.evento.num_horas} horas</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Período:</span>
-                    <span>
-                      {formatDateRange(certificate.evento.fecha_inicio, certificate.evento.fecha_fin)}
-                    </span>
-                  </div>
-                  {certificate.asistencia_porcentaje && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Asistencia:</span>
-                      <div className="flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3 text-green-600" />
-                        <span>{certificate.asistencia_porcentaje}%</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Información del evento */}
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Descripción del evento:</p>
-                  <p className="text-sm text-foreground">{certificate.evento.descripcion}</p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                    <span>Carrera: {certificate.evento.carrera_dirigida}</span>
-                    {certificate.evento.requiere_nota && (
-                      <span>• Nota mínima: {certificate.evento.nota_aprobacion}%</span>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleShare(cert)}
+                    >
+                      <Share2 className="h-4 w-4 mr-2" /> Compartir
+                    </Button>
                   </div>
                 </div>
 
-                {/* Acciones */}
-                <div className="flex gap-2 pt-2">
-                  <Button 
-                    onClick={() => handleDownload(certificate)}
-                    className="flex-1 auth-button"
-                    size="sm"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Descargar
-                  </Button>
-                  <Button 
-                    onClick={() => handleShare(certificate)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Compartir
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`/certificates/verify/${certificate.id_certificado}`, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>
         ))}
-      </div>      {/* Estado vacío */}
+
+      </div>
+
+      {/* Estado vacío */}
       {filteredCertificates.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
@@ -389,7 +283,7 @@ export function Certificates({ user }: CertificatesProps) {
               No se encontraron certificados
             </h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm || filterBy !== "all" 
+              {searchTerm || filterBy !== "all"
                 ? "Intenta ajustar tus filtros de búsqueda"
                 : "Aún no tienes certificados. ¡Completa un evento para obtener tu primer certificado!"}
             </p>
@@ -410,7 +304,7 @@ export function Certificates({ user }: CertificatesProps) {
             <div>
               <h3 className="font-semibold text-foreground mb-2">Verificación de Certificados</h3>
               <p className="text-muted-foreground text-sm mb-3">
-                Todos nuestros certificados son verificables digitalmente y están respaldados por nuestro sistema 
+                Todos nuestros certificados son verificables digitalmente y están respaldados por nuestro sistema
                 de inscripciones. Cada certificado incluye información del evento, fecha de emisión y tipo de certificación obtenida.
               </p>
               <div className="flex gap-2">
@@ -427,6 +321,12 @@ export function Certificates({ user }: CertificatesProps) {
           </div>
         </CardContent>
       </Card>
+
+      <ShareSuccessModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        success={shareSuccess}
+      />
     </div>
   )
 }

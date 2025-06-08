@@ -11,6 +11,7 @@ const navItems = [
   { name: "Inicio", href: "/" },
   { name: "Eventos", href: "/sections" },
   { name: "Cursos", href: "/sections/events/2" },
+  { name: "Notificar", href: "/pages/solicitud-user" },
 ]
 
 export function MainNav() {
