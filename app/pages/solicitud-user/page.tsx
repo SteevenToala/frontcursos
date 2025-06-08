@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '@/app/globals.css';
 import { SiteLayout } from '@/components/site-layout';
 import CreateSolicitude from '@/app/models/Solicitud';
@@ -14,7 +14,15 @@ import DescripcionCambio from '@/components/FormularioSolicitud/DescripcionCambi
 import DetalleError from '@/components/FormularioSolicitud/DetalleError';
 
 export default function SolicitudCambioForm() {
-  const user = StorageNavegador.getItemWithExpiry("user") as User;
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = StorageNavegador.getItemWithExpiry("user") as User;
+      setUser(storedUser);
+    }
+  }, []);
+
   const token = user?.token;
 
   const [archivoFile, setArchivoFile] = useState<File | null>(null);
@@ -107,6 +115,9 @@ export default function SolicitudCambioForm() {
       alert('Error al enviar la solicitud');
     }
   };
+
+  // Render nothing or a loading state until user is loaded
+  if (user === null) return null;
 
   return (
     <SiteLayout>      <div className="max-w-4xl mx-auto p-6 bg-card rounded-2xl shadow-md border">
