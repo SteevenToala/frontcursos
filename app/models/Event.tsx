@@ -16,6 +16,7 @@ export interface Event {
   id_organizador: number;
   fechaEliminacion?: Date | string | null; // ✅ Cambio: fecha_eliminacion → fechaEliminacion
   id_seccion: number;
+  requisitos:{idRequisito:number,nombre:string}[]
 }
 
 export default Event;

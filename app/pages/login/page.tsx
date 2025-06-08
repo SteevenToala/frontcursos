@@ -26,7 +26,7 @@ export default function LoginPage() {
   setTimeout(() => {
     const user = StorageNavegador.getItemWithExpiry("user");
     if (user) {
-      if (user && typeof user === "object" && "rol" in user && (user as any).rol !== "admin") {
+      if (user && typeof user === "object" && "rol" in user && ((user as any).rol !== "admin" && (user as any).rol !== "admin2" && (user as any).rol !== "desarrollador")) {
         router.push("/pages/client/dashboard")
       } else {
         router.push("/pages/admin/dashboard")

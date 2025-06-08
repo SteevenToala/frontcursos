@@ -24,18 +24,18 @@ type SidebarProps = {
 };
 
 const navItems = [
-  { id: "pagina_principal", label: "Ir a la página principal", icon: LayoutDashboard },
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus },
-  { id: "eventos", label: "Eventos", icon: Calendar },
-  { id: "Secciones", label: "Secciones", icon: BookOpen },
-  { id: "autoridades", label: "Autoridades", icon: User },
-  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon },
-  { id: "mision_vision", label: "Mision y Vision", icon: Settings },
-  { id: "reportes", label: "Reportes", icon: TextSelectIcon },
-  { id: "calificaciones", label: "Calificaciones", icon: Edit },
-  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList },
-  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User }
+  { id: "pagina_principal", label: "Ir a la página principal", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
+  { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus, rolesPermitidos: ["admin"] },
+  { id: "eventos", label: "Eventos", icon: Calendar, rolesPermitidos: ["admin", "admin2"] },
+  { id: "Secciones", label: "Secciones", icon: BookOpen, rolesPermitidos: ["admin", "admin2"] },
+  { id: "autoridades", label: "Autoridades", icon: User, rolesPermitidos: ["admin", "admin2"] },
+  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["admin", "admin2"] },
+  { id: "mision_vision", label: "Mision y Vision", icon: Settings, rolesPermitidos: ["admin", "admin2"] },
+  { id: "reportes", label: "Reportes", icon: TextSelectIcon, rolesPermitidos: ["admin", "admin2"] },
+  { id: "calificaciones", label: "Calificaciones", icon: Edit, rolesPermitidos: ["admin", "admin2"] },
+  { id: "inscripciones", label: "Inscripciones", icon: ClipboardList, rolesPermitidos: ["admin", "admin2"] },
+  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User, rolesPermitidos: ["desarrollador"] },
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
@@ -70,28 +70,30 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
       <div>
         <h2 className="text-lg font-bold text-red-700 mb-6 px-2">Panel</h2>
         <nav className="space-y-1">
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => {
-                if (id === 'pagina_principal') {
-                  router.push('/')
-                } else {
-                  onSelect(id)
-                }
-              }}
-              className={`flex items-center gap-3 px-4 py-2 w-full rounded-md text-sm transition
+          {navItems
+            .filter(item => item.rolesPermitidos.includes(user.rol)) 
+            .map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => {
+                  if (id === 'pagina_principal') {
+                    router.push('/')
+                  } else {
+                    onSelect(id)
+                  }
+                }}
+                className={`flex items-center gap-3 px-4 py-2 w-full rounded-md text-sm transition
                 ${id === 'pagina_principal'
-                  ? 'bg-gradient-to-r from-primary to-red-500 text-white font-bold shadow-lg border border-primary/60 hover:from-red-500 hover:to-primary'
-                  : active === id
-                    ? 'bg-red-50 text-red-600 font-medium'
-                    : 'text-gray-700 hover:bg-gray-100'}
+                    ? 'bg-gradient-to-r from-primary to-red-500 text-white font-bold shadow-lg border border-primary/60 hover:from-red-500 hover:to-primary'
+                    : active === id
+                      ? 'bg-red-50 text-red-600 font-medium'
+                      : 'text-gray-700 hover:bg-gray-100'}
               `}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
+              >
+                <Icon size={18} />
+                {label}
+              </button>
+            ))}
         </nav>
       </div>
 
