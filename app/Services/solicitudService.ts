@@ -6,7 +6,7 @@ import StorageNavegador from "./StorageNavegador";
 class Solicitud {
     static async crearSolicitud(formData: CreateSolicitude) {
         const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitudes`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud${idTokenString?.token!=null ? "/logeado" : ""}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
