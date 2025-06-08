@@ -79,7 +79,7 @@ export async function getInscripcionById(id: number) {
   }
 }
 
-export async function createInscripcion(inscripcionData: Partial<Inscripcion>) {
+export async function createInscripcion(inscripcionData: any) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;

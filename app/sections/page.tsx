@@ -130,7 +130,7 @@ export default function SectionsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {seccionesPaginadas.map((seccion) => (
                     <div
-                      key={seccion.id_evento}
+                      key={seccion.id_seccion}
                       className="bg-white rounded-xl border border-primary/10 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                     >
                       <div className="relative h-64">
