@@ -14,6 +14,8 @@ import { Separator } from "@/components/ui/separator"
 import '../../../globals.css'
 import StorageNavegador from "@/app/Services/StorageNavegador";
 import { LoginRequiredModal, AdminNotAllowedModal, RegistrationSuccessModal, RegistrationErrorModal } from "@/components/EventModals";
+import User from "@/app/models/User";
+import FirebaseService from "@/app/Services/firebase/FirebaseService";
 
 function formatFecha(fechaStr: string) {
   if (!fechaStr) return "";
@@ -54,12 +56,18 @@ export default function DetalleEventoPage() {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  //para manejar subida de archivos de acuerdo a los requisitos del evento
+  const [mostrarFormularioRequisitos, setMostrarFormularioRequisitos] = useState(false);
+  const [archivosRequisitos, setArchivosRequisitos] = useState<{ [key: number]: File | null }>({});
+
+
   useEffect(() => {
     async function fetchEvento() {
       try {
         // Busca el evento por ID
         const eventoEncontrado = await sectionsService.getEventoPorId(String(id_evento));
         console.log("Evento encontrado:", eventoEncontrado);
+        console.log("Requisitos del evento:", eventoEncontrado?.requisitos);
         setEvento(eventoEncontrado);
       } catch (error) {
         setEvento(null);
@@ -98,45 +106,86 @@ export default function DetalleEventoPage() {
   const asistentes = evento.asistentes || 0;
   const maxAsistentes = evento.max_asistentes || 100;
   const discountPercentage = evento.descuento || 0;
+  const realizarInscripcion = async (urlCedulaPapeletaV: string | null, urlComprobantePago: string | null, cartaMotivacion: string | null) => {
+    try {
+      // Simula una inscripción o llama a tu backend con los archivos
 
-  function handleInscribirse() {
-    const user = StorageNavegador.getItemWithExpiry("user");
-    let parsed = null;
-    if (user && typeof user === 'string') {
-      try {
-        parsed = JSON.parse(user);
-      } catch {
-        parsed = null;
-      }
-    } else if (user && typeof user === 'object') {
-      parsed = user;
+      inscripcionService.createInscripcion({
+        evento: evento.id_evento,
+        urlCedulaPapeletaV: urlCedulaPapeletaV,
+        urlComprobantePago: urlComprobantePago,
+        cartaMotivacion: cartaMotivacion
+      }).then(() => {
+        setShowSuccessModal(true);
+      })
+        .catch((err) => {
+          setErrorMessage("Error al inscribirse: " + (err.message || err));
+          setShowErrorModal(true);
+        });
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Hubo un error al realizar la inscripción.");
+      setShowErrorModal(true);
     }
-    if (!parsed) {
+  };
+
+  const handleInscribirse = () => {
+    const usuario = StorageNavegador.getItemWithExpiry("user") as User;
+    if (!usuario) {
       setShowLoginModal(true);
       return;
     }
-    if (parsed.rol === 'admin') {
+
+    if (usuario.rol === "admin") {
       setShowAdminModal(true);
       return;
     }
-    // Lógica real de inscripción para estudiantes
-    inscripcionService.createInscripcion({
-      id_usuario: parsed.uid_firebase,
-      id_evento: evento.id_evento,
-      estado_pago: 'pendiente',
-      forma_pago: '',
-      comprobante_pago: '',
-      estado_inscripcion: 'Pendiente',
-    })
-      .then(() => {
-        setShowSuccessModal(true);
-      })
-      .catch((err) => {
-        setErrorMessage("Error al inscribirse: " + (err.message || err));
-        setShowErrorModal(true);
-      });
-  }
 
+    if (evento.requisitos && evento.requisitos.length > 0) {
+      // Mostrar formulario de requisitos
+      setMostrarFormularioRequisitos(true);
+    } else {
+      // Proceder a inscripción directamente
+      realizarInscripcion(null, null, null);
+    }
+  };
+  /*
+    function handleInscribirse() {
+      const user = StorageNavegador.getItemWithExpiry("user");
+      let parsed = null;
+      if (user && typeof user === 'string') {
+        try {
+          parsed = JSON.parse(user);
+        } catch {
+          parsed = null;
+        }
+      } else if (user && typeof user === 'object') {
+        parsed = user;
+      }
+      if (!parsed) {
+        setShowLoginModal(true);
+        return;
+      }
+      if (parsed.rol === 'admin') {
+        setShowAdminModal(true);
+        return;
+      }
+      // Lógica real de inscripción para estudiantes
+      inscripcionService.createInscripcion({
+        evento: evento.id_evento,
+        urlCedulaPapeletaV: null,
+        urlComprobantePago: null,
+        cartaMotivacion: null
+      })
+        .then(() => {
+          setShowSuccessModal(true);
+        })
+        .catch((err) => {
+          setErrorMessage("Error al inscribirse: " + (err.message || err));
+          setShowErrorModal(true);
+        });
+    }
+  */
   return (
     <SiteLayout>
       <div className="container px-4 mx-auto py-8">
@@ -344,6 +393,66 @@ export default function DetalleEventoPage() {
       <RegistrationSuccessModal open={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
       {/* Modal de error de inscripción */}
       <RegistrationErrorModal open={showErrorModal} onClose={() => setShowErrorModal(false)} errorMessage={errorMessage} />
+
+      {mostrarFormularioRequisitos && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg space-y-4">
+            <h2 className="text-xl font-bold">Sube los documentos requeridos</h2>
+            {evento.requisitos.map((req: any) => (
+              <div key={req.idRequisito} className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">{req.nombre}</label>
+                <input
+                  type="file"
+                  onChange={(e) =>
+                    setArchivosRequisitos((prev) => ({
+                      ...prev,
+                      [req.idRequisito]: e.target.files?.[0] || null,
+                    }))
+                  }
+                />
+              </div>
+            ))}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="ghost" onClick={() => setMostrarFormularioRequisitos(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={async () => {
+                  const user = StorageNavegador.getItemWithExpiry("user") as User;
+                  if (user) {
+
+                    // Subir cada archivo de requisitos individualmente
+                    const uploadedUrls: { [key: number]: string | null } = {};
+                    for (const [idRequisito, file] of Object.entries(archivosRequisitos)) {
+                      if (file) {
+                        const url = await FirebaseService.uploadFile(
+                          file,
+                          user.username ? user.username : "",
+                          file.name
+                        );
+                        uploadedUrls[Number(idRequisito)] = url;
+                      }
+                    }
+                    console.log("Archivos subidos:", uploadedUrls);
+                    // Aquí podrías validar y luego inscribir
+                    realizarInscripcion(
+                      uploadedUrls[1] || null,
+                      uploadedUrls[2] || null,
+                      uploadedUrls[3] || null
+                    ); // Puedes hacer la llamada a API y manejar el modal de éxito/error
+                    setMostrarFormularioRequisitos(false);
+                  } else {
+                    setShowLoginModal(true);
+                  }
+                }}
+              >
+                Enviar y confirmar inscripción
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </SiteLayout>
   );
 }
